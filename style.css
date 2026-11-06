@@ -217,7 +217,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{o
 .forms{gap:10px}.forms button{border:0;border-bottom:1px solid transparent;padding:8px 0;color:#777}.forms button[aria-pressed=true]{border-bottom-color:#222}
 .material-options,.mapping{border-bottom:1px solid var(--line);border-top:0;margin-top:0}.panel .appearance{border-top:0}.looks{margin:0 0 15px}.look-options i,.palettes i{filter:grayscale(1)}.look-options button.selected{border-color:transparent;border-bottom-color:#222}.route-heading select{background:none;border-radius:0}
 .dock-buttons{border:0;gap:19px;padding:0}.dock-buttons button{width:57px;border-bottom:1px solid transparent}.dock-buttons button.selected{border-bottom-color:#333}.shape-dock{gap:8px;bottom:45px}
-.languages{display:flex;align-items:center;gap:8px;white-space:nowrap}.languages span{font-size:10px;color:#bbb}.languages button{color:#999;font-size:11px;min-width:24px;position:relative}.languages button[aria-pressed=true]{color:#111}.languages button[aria-pressed=true]:after{content:'';height:1px;position:absolute;left:5px;right:5px;bottom:3px;background:#111}
+.languages{display:flex;align-items:center;gap:8px;white-space:nowrap}.languages span{font-size:10px;color:#bbb}.languages button{color:#999;font-size:11px;min-width:24px;position:relative}.languages button[aria-pressed=true]{color:#111}.languages button:after{content:'';height:1px;position:absolute;left:5px;right:5px;bottom:3px;background:#111}
 .intro{top:132px}.intro h1{font-size:34px;font-weight:350;letter-spacing:3px;max-width:240px}.intro>p:last-child{max-width:220px;line-height:1.9}.work-caption{bottom:150px}.edition{letter-spacing:1px;font-size:10px}.look-caption{display:none}.gesture-readout{border:0;padding-top:0}
 #toast {
   background: none;
@@ -311,11 +311,11 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
 .voice-switch::before {
   content: ''; width: 16px; height: 16px; flex: none;
   background: currentColor;
-  mask: var(--voice-symbol) center / contain no-repeat;
-  -webkit-mask: var(--voice-symbol) center / contain no-repeat;
+  mask: var(--voice-on) center / contain no-repeat;
+  -webkit-mask: var(--voice-on) center / contain no-repeat;
 }
-.voice-switch { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22M16%209a4%204%200%200%201%200%206m2-9a8%208%200%200%201%200%2012%22/%3E%3C/svg%3E"); }
-.voice-switch[data-sound="off"] { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22m16%209%206%206m0-6-6%206%22/%3E%3C/svg%3E"); }
+.voice-switch { --voice-on: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22M16%209a4%204%200%200%201%200%206m2-9a8%208%200%200%201%200%2012%22/%3E%3C/svg%3E"); }
+.voice-switch { --voice-off: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22m16%209%206%206m0-6-6%206%22/%3E%3C/svg%3E"); }
 
 #concept[open] {
   opacity: 0;
@@ -354,3 +354,59 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
 #openingChoice button { font: inherit; font-size: 12px; padding: 8px 10px; }
 #openingChoice button:hover, #openingChoice button:focus-visible { text-decoration: underline; }
 .panel :disabled, .shape-dock :disabled { opacity: .48; cursor: default; }
+
+/* Small responses share the same timing, independently of the artwork. */
+button, summary {
+ transition: color 160ms ease-out, border-color 180ms ease-out, background-color 160ms ease-out,
+             opacity 160ms ease-out, box-shadow 160ms ease-out, scale 145ms ease-out;
+}
+.languages button::after {
+ opacity: 0; transform: scaleX(.45);
+ transition: opacity 150ms ease-out, transform 190ms ease-out;
+}
+.languages button[aria-pressed=true]::after { opacity: 1; transform: scaleX(1); }
+.voice-switch { position: relative; padding-inline-start: 23px; }
+.voice-switch::before, .voice-switch::after {
+ content: ''; position: absolute; left: 0; top: 50%; translate: 0 -50%;
+ width: 16px; height: 16px; background: currentColor;
+ transition: opacity 150ms ease-out;
+}
+.voice-switch::after {
+ -webkit-mask: var(--voice-off) center / contain no-repeat;
+ mask: var(--voice-off) center / contain no-repeat;
+ opacity: 0;
+}
+.voice-switch[data-sound=off]::before { opacity: 0; }
+.voice-switch[data-sound=off]::after { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+ button:enabled:active, summary:active { scale: .97; transition-duration: 70ms; }
+ summary span { transition: transform 210ms ease-out; }
+ details[open] > summary span { transform: rotate(45deg); }
+ @supports (interpolate-size: allow-keywords) and selector(details::details-content) {
+  .panel details { interpolate-size: allow-keywords; }
+  .panel details::details-content {
+   block-size: 0; overflow: clip; opacity: 0;
+   transition: block-size 220ms cubic-bezier(.25,.7,.25,1), opacity 160ms ease-out,
+               content-visibility 220ms allow-discrete;
+  }
+  .panel details[open]::details-content { block-size: auto; opacity: 1; }
+ }
+ @supports (transition-behavior: allow-discrete) {
+  #openingChoice {
+   opacity: 1;
+   transition: opacity 150ms ease-out, display 150ms allow-discrete;
+  }
+  #openingChoice[hidden] { opacity: 0; pointer-events: none; }
+  @starting-style { #openingChoice:not([hidden]) { opacity: 0; } }
+ }
+}
+@media (prefers-reduced-motion: reduce) {
+ button::before, button::after { transition: none !important; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+ @starting-style {
+  :is(#sensorStart, #sensorStop, #audioControls, #eyeControls):not([hidden]) { opacity: 0; }
+ }
+ #audioControls, #eyeControls { transition: opacity 180ms ease-out; }
+}

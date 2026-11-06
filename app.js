@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=opening-v7.14';
-import {connectVoiceButton} from './sculpture-voice.mjs?v=opening-v7.14';
+import './languages.mjs?v=fade-v7.15';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=fade-v7.15';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -189,7 +189,7 @@ function updateAppearance(dt,now){
  gallery.respond(values,state.roomColor&&state.look!=='quiet');
 }
 all('[data-look]').forEach(b=>b.onclick=()=>setLook(b.dataset.look));
-all('.panel details').forEach(detail=>detail.addEventListener('toggle',()=>{if(!detail.open)document.querySelector('.panel').scrollTo({top:0,behavior:'auto'})}));
+all('.panel details').forEach(detail=>detail.addEventListener('toggle',()=>{if(!detail.open)document.querySelector('.panel').scrollTo({top:0,behavior:matchMedia('(prefers-reduced-motion: reduce)').matches?'instant':'smooth'})}));
 $('restoreRoutes').onclick=()=>{routes=defaultRoutes();renderRoutes();toast('已恢复当前输入的默认映射')};
 $('roomColor').onchange=e=>state.roomColor=e.target.checked;
 for(const id of ['reactivity','memory'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};
