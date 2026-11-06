@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.10](https://github.com/littleffww/gyri/tree/codex/gyri-v7.10-2026-11-06) | 2026-11-06 | Softer reflected light on the upper and central folds in the front view. |
 | [Gyri v7.9](https://github.com/littleffww/gyri/tree/codex/gyri-v7.9-2026-11-06) | 2026-11-06 | A first-visit voice cue and a gently animated About dialog. |
 | [Gyri v7.8](https://github.com/littleffww/gyri/tree/codex/gyri-v7.8-2026-11-06) | 2026-11-06 | Front view, a two-second hold at full dispersion, and tap to pause or resume motion and voice together. |
 | [Gyri v7.7](https://github.com/littleffww/gyri/tree/codex/gyri-v7.7-2026-11-06) | 2026-11-06 | Automatic opening and voice playback with a speaker indicator and tap-to-enable fallback. |
