@@ -1,4 +1,6 @@
 const rows=`
+已恢复原状|Original restored|元に戻しました
+恢复原状|Restore original|元に戻す
 点一下听人声|Tap to hear the voice|タップして声を聴く
 轻点雕塑，听它散开，再聚合。|Tap the sculpture to hear it disperse and gather.|彫刻に触れて、粒子が広がり、集まる音を聴いてください。
 开启作品人声|Enable sculpture voice|作品の声をオン

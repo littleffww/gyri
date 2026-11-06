@@ -38,6 +38,13 @@ export function createParticles(geometry,root,shared=makeSoftMaterial().uniforms
  const points=new T.Points(geo,mat);points.frustumCulled=false;points.visible=false;root.add(points);
  let form='original',s=0,migrating=false;const names=['original','sphere','helix','assembly'];
  return {
+ reset() {
+  form = 'original';
+  migrating = false;
+  s = uniforms.scatter.value = shared.uDissolve.value = 0;
+  formWeights.set(1, 0, 0, 0);
+  points.visible = false;
+ },
  setForm(name){if(!names.includes(name)||name===form)return;form=name;migrating=true;},
  updateTrace(trace){const dst=geo.attributes.aTrace.array;for(let j=0;j<n*3;j+=3)for(let k=0;k<3;k++){dst[j+k]=0;for(let b=0;b<3;b++)dst[j+k]+=trace[samples[j+b]*3+k]*weights[j+b]}geo.attributes.aTrace.needsUpdate=true;},
  update(dt,amount,colors,opening=false){
