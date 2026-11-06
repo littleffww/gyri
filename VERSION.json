@@ -1,11 +1,11 @@
 {
-  "name": "Gyri v7.19",
+  "name": "Gyri v7.20",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
-  "source_commit": "f5b52bd11e978ac40ecf8ff59107f44225452a36",
-  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_f2ca928e66248191924c62171507af3b",
+  "source_commit": "568f559ad33e2c2e1f4523a2e887917095e1c048",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7.19-2026-11-06",
-  "snapshot_tag": "gyri-v7.19-2026-11-06",
-  "note": "Optional night lighting, a matching interface and a shareable night-view link."
+  "snapshot_branch": "codex/gyri-v7.20-2026-11-06",
+  "snapshot_tag": "gyri-v7.20-2026-11-06",
+  "note": "Smooth restoration from the current shape and live wrist, gaze, head and pinch controls.",
+  "portfolio_url": "https://ousuguruhi.com/#in-process/gyri"
 }

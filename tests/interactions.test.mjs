@@ -28,3 +28,13 @@ test('cancelling pending camera access stops a stream that arrives late',async()
 test('timed-out camera requests also stop late streams',async()=>{
  let resolveMedia,stops=0;const device={getUserMedia:()=>new Promise(resolve=>resolveMedia=resolve)};const p=requestMedia({},new AbortController().signal,device,5);await assert.rejects(p,/超时/);resolveMedia({getTracks:()=>[{stop:()=>stops++}]});await new Promise(resolve=>setTimeout(resolve,0));assert.equal(stops,1);
 });
+
+test('opposed wrist tilts and dual pinches take priority over two-hand stretch',async()=>{
+ const {bodyGesture}=await import('../dist/interactions.mjs');
+ const left=hand(.28),right=hand(.72);
+ left[0].x-=.16;right[0].x+=.16;
+ assert.equal(bodyGesture([left,right]).kind,'wring');
+ assert.equal(bodyGesture([right,left]).amount,bodyGesture([left,right]).amount);
+ for(const h of [left,right])h[4]={...h[8]};
+ const resize=bodyGesture([left,right]);assert.equal(resize.kind,'resize');assert.ok(resize.gap>.4);
+});

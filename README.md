@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.20](https://github.com/littleffww/gyri/tree/codex/gyri-v7.20-2026-11-06) | 2026-11-06 | Particles retrace the current formation on reset. Counter-rotate wrists, resize with two pinches, or combine a calibrated gaze with a hand to pull a fold. |
 | [Gyri v7.19](https://github.com/littleffww/gyri/tree/codex/gyri-v7.19-2026-11-06) | 2026-11-06 | Adds a [night view](https://littleffww.github.io/gyri/?view=night) with a charcoal stage, cool light and silver particles. |
 | [Gyri v7.18](https://github.com/littleffww/gyri/tree/codex/gyri-v7.18-2026-11-06) | 2026-11-06 | Mobile media playback for the recorded voice, tap feedback at rest and recovery after audio interruptions. |
 | [Gyri v7.17](https://github.com/littleffww/gyri/tree/codex/gyri-v7.17-2026-11-06) | 2026-11-06 | Portfolio edition with four interface languages, localized project notes and AcrossRCA team credits. |
@@ -76,6 +77,6 @@ node --check dist/app.js
 node --test tests/*.test.mjs
 ```
 
-27 tests cover gesture and media handling, deformation, mapping, unchanged source geometry, reversible saved traces, shared particle/solid uniforms, barycentric trace transfer and formation reconstruction. Browser QA covers partial dissolution, regrouping, preserved twist, accepting/withdrawing suggestions, language switching and a 390 × 844 mobile layout. Early shader compilation errors found during QA were fixed before publication.
+29 tests cover gesture and media handling, deformation, mapping, unchanged source geometry, reversible saved traces, shared particle/solid uniforms, barycentric trace transfer and formation reconstruction. Browser QA covers partial dissolution, regrouping, preserved twist, accepting/withdrawing suggestions, language switching and a 390 × 844 mobile layout. Early shader compilation errors found during QA were fixed before publication.
 
 Dependencies: Three.js 0.170.0 (MIT), MediaPipe Tasks Vision 0.10.21 (Apache-2.0), Google hand/face models. Existing notices are retained. No third-party imagery is used.

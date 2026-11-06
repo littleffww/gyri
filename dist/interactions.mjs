@@ -63,7 +63,12 @@ export function bodyGesture(hands){
  const extended=[8,12,16,20].map(i=>distance(h[i],h[0])>distance(h[i-2],h[0])*1.12&&distance(h[i],h[i-3])>palm*.65);
  const fingers=extended.filter(Boolean).length;
  const point={x:1-(h[4].x+h[8].x)/2,y:(h[4].y+h[8].y)/2};
- if(hands.length>1){const [a,b]=[...hands].sort((a,b)=>a[9].x-b[9].x);const dx=b[9].x-a[9].x,dy=b[9].y-a[9].y,len=Math.max(.01,Math.hypot(dx,dy));return {kind:'stretch',amount:clamp((len-.12)/.48,0,1)*1.15,axis:[dx/len,dy/len,0],point,rotation:m.rotation,pinch:null};}
+ if(hands.length>1){const [a,b]=[...hands].sort((a,b)=>a[9].x-b[9].x);const dx=b[9].x-a[9].x,dy=b[9].y-a[9].y,len=Math.max(.01,Math.hypot(dx,dy));const first = handMetrics([a]), second = handMetrics([b]);
+  if (first.pinch < .32 && second.pinch < .32) return {kind:'resize',gap:len,point};
+  const counter = first.roll - second.roll;
+  if (first.roll * second.roll < 0 && Math.abs(counter) > .42)
+   return {kind:'wring',amount:clamp(counter*2.2,-2.15,2.15),point};
+  return {kind:'stretch',amount:clamp((len-.12)/.48,0,1)*1.15,axis:[dx/len,dy/len,0],point,rotation:m.rotation,pinch:null};}
  if(fingers===0)return {kind:'compress',amount:-.48,point,rotation:m.rotation,pinch:m.pinch};
  if(m.pinch<.32&&fingers>=1)return {kind:'pull',amount:1,point,rotation:m.rotation,pinch:m.pinch};
  if(extended[0]&&fingers===1)return {kind:'touch',amount:1,point:{x:1-h[8].x,y:h[8].y},rotation:m.rotation,pinch:m.pinch};
