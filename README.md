@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.14](https://github.com/littleffww/gyri/tree/codex/gyri-v7.14-2026-11-06) | 2026-11-06 | Rotate through the entire voiced opening. A tap offers playback choices while the sequence continues. |
 | [Gyri v7.13](https://github.com/littleffww/gyri/tree/codex/gyri-v7.13-2026-11-06) | 2026-11-06 | Drag to rotate by default. Select a shaping tool to deform, or choose Rotate to inspect the result. |
 | [Gyri v7.12](https://github.com/littleffww/gyri/tree/codex/gyri-v7.12-2026-11-06) | 2026-11-06 | Restores the angled studio lighting, centers softer feedback above the sculpture and puts one-click restoration beside Gather. |
 | [Gyri v7.11](https://github.com/littleffww/gyri/tree/codex/gyri-v7.11-2026-11-06) | 2026-11-06 | A centered front light and matching studio reflection illuminate the sculpture from the viewer’s side. |
@@ -33,7 +34,7 @@ An AcrossRCA interaction study about retaining authorship while talking with AI.
 
 ## Current experience
 
-The opening faces the viewer: ten seconds to disperse, two seconds fully dispersed, ten seconds to gather. Recorded voice opens into reverberation as particles move outward, fades at rest and returns closer during gathering. Tap the sculpture or press Space to pause and resume both from the same moment. Dragging takes over; the speaker switches sound independently. When the browser blocks automatic audio, tap the speaker to hear the ongoing movement. Reduced-motion preferences skip the automatic animation. The introduction and controls are available in Chinese, Japanese and English.
+The opening faces the viewer: ten seconds to disperse, two seconds fully dispersed, ten seconds to gather. The voice follows the full opening, including its two-second hold. Drag to rotate while it plays. Tap the sculpture to choose whether to pause or keep watching. A resume continues from the same moment. After gathering, the shaping tools become available. The speaker switches sound independently. When automatic audio is blocked, a first tap or drag can join playback at the current point. Reduced-motion preferences skip the automatic animation. The introduction and controls are available in Chinese, Japanese and English.
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 

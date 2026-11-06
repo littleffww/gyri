@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=orbit-v7.13';
-import {connectVoiceButton} from './sculpture-voice.mjs?v=details-v7.9';
+import './languages.mjs?v=opening-v7.14';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=opening-v7.14';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -39,7 +39,6 @@ const modes = {
  audio: {badge: '声音', guide: '对着麦克风轻声哼唱，或拍手释放粒子。'}
 };
 function status(t){$('status').textContent=t}
-// Run once after the geometry is ready; actual input immediately takes over.
 // A cached page shell can briefly precede the audio control during a Pages rollout.
 let voiceButton = $('voiceSwitch');
 if (!voiceButton) {
@@ -51,22 +50,47 @@ if (!voiceButton) {
  $('instructions').before(voiceButton);
 }
 const voice = connectVoiceButton(voiceButton, toast);
-// The stage owns its gestures: a tap always pauses, even if autoplay was blocked.
-function unlockVoice(event) {
- if (event.target.closest?.('#voiceSwitch, #stage, #freeze') || event.code === 'Space') return;
- if (voice.waiting) voice.resume();
+const watchingOpening = () => openingPending || openingActive;
+const lockedForOpening = [];
+function setupOpeningControls() {
+ if (!watchingOpening()) return;
+ const controls = document.querySelectorAll('.panel button, .panel input, .panel select, [data-shape]');
+ for (const control of controls) {
+  if (control.disabled || control === voiceButton || control.id === 'freeze' || control.dataset.shape === 'rotate') continue;
+  lockedForOpening.push(control);
+  control.disabled = true;
+ }
+ $('instructions').textContent = '开场时可拖动旋转，轻点选择是否暂停。';
 }
-for (const type of ['click', 'keydown']) document.addEventListener(type, unlockVoice, {capture:true});
-function stopOpening(event) {
- if (event?.target.closest?.('#voiceSwitch, .languages, #freeze, #reset, #conceptOpen, #concept') || event?.code === 'Space') return;
- if (event?.type === 'pointerdown' && event.target.closest?.('#stage')) return;
- openingPending = false;
- if (!openingActive) return;
- openingActive = false;
- particleAmount = 0;
- $('particleRange').value = 0;
+function finishOpening() {
+ openingPending = openingActive = false;
+ for (const control of lockedForOpening) control.disabled = false;
+ lockedForOpening.length = 0;
+ $('openingChoice').hidden = true;
+ $('instructions').textContent = modes[state.mode].guide;
  status('');
 }
+function showOpeningChoice() {
+ $('openingChoice').hidden = false;
+ $('openingPause').hidden = state.frozen;
+}
+function unlockVoice(event) {
+ if (event.target.closest?.('#voiceSwitch, #freeze, #openingPause')) return;
+ if (voice.waiting) voice.resume();
+}
+for (const type of ['pointerdown', 'pointerup', 'click', 'keydown']) {
+ document.addEventListener(type, unlockVoice, {capture:true, passive:true});
+}
+$('openingContinue').onclick = () => {
+ setPaused(false);
+ $('openingChoice').hidden = true;
+ renderer.domElement.focus({preventScroll:true});
+};
+$('openingPause').onclick = () => {
+ setPaused(true);
+ showOpeningChoice();
+ $('openingContinue').focus({preventScroll:true});
+};
 function beginOpening() {
  if (!openingPending) return;
  openingPending = false;
@@ -74,7 +98,7 @@ function beginOpening() {
  openingElapsed = 0;
  openingActive = true;
  voice.start();
- status('开场演示中，轻点雕塑可暂停。');
+
 }
 function stepOpening(dt) {
  if (!ready || document.hidden) return;
@@ -89,12 +113,9 @@ function stepOpening(dt) {
  // Reserve 100% on the readout for the actual two-second hold.
  $('particleRange').value = particleAmount === 1 ? 1 : Math.min(.99, particleAmount);
  if (openingElapsed >= duration) {
-  openingActive = false;
-  status('');
+  finishOpening();
  }
 }
-for(const type of ['pointerdown','wheel','input'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
-document.addEventListener('keydown',e=>{if(!['Tab','Shift','Control','Alt','Meta'].includes(e.key))stopOpening(e)},{capture:true});
 function toast(message) {
  const caption = $('toast');
  clearTimeout(toastTimer);
@@ -129,6 +150,8 @@ camera.setViewOffset(innerWidth,innerHeight,-root.position.x/width*innerWidth,(r
  const caption = $('toast');
  caption.style.left = ((crown.x + 1) * .5 * innerWidth) + 'px';
  caption.style.top = Math.max(44, (1 - crown.y) * .5 * innerHeight - 12) + 'px';
+ $('openingChoice').style.left = caption.style.left;
+ $('openingChoice').style.top = caption.style.top;
 }layout();addEventListener('resize',layout);
 const sensors=new Sensors($('video'),message=>{if(!sensors.kind&&!sensors.starting)clearTargets();status(message);syncSensorUI()});
 function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';}
@@ -171,7 +194,7 @@ $('restoreRoutes').onclick=()=>{routes=defaultRoutes();renderRoutes();toast('已
 $('roomColor').onchange=e=>state.roomColor=e.target.checked;
 for(const id of ['reactivity','memory'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};
 function palette(name){state.palette=name;const p={mint:{body:'#999999',roughness:.36,metalness:.72,env:1.1},violet:{body:'#777777',roughness:.64,metalness:0,env:.24},amber:{body:'#ae7660',roughness:.83,metalness:0,env:.4}}[name];material.color.set(p.body);material.roughness=p.roughness;material.metalness=p.metalness;material.envMapIntensity=p.env;all('[data-palette]').forEach(b=>{const selected=b.dataset.palette===name;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected))})}
-all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>selectMouseTool(b.dataset.shape));all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
+all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>{if(!watchingOpening())selectMouseTool(b.dataset.shape)});all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
 $('sensorStart').onclick=async()=>{state.demo=false;setPaused(false);const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
 $('sensorStop').onclick=()=>{sensors.stop();release(false);tracked=false;poseFilter.reset();calibration=null;poseLabel('松手 · 缓慢回弹','设备已关闭');status('输入已关闭，模型将回弹。可以继续模拟动作。');syncSensorUI()};
 $('release').onclick=()=>{particleAmount=0;particleHold=false;particleBurst=0;$('particleRange').value=0;release()};
@@ -203,7 +226,12 @@ function togglePause() {
  setPaused(!state.frozen);
  toast(state.frozen?(sensors.kind?'画面暂停；实时输入仍开启':'画面已暂停'):'继续运动');
 }
-$('freeze').onclick=togglePause;
+$('freeze').onclick = () => {
+ if (!watchingOpening()) return togglePause();
+ setPaused(!state.frozen);
+ if (state.frozen) showOpeningChoice();
+ else $('openingChoice').hidden = true;
+};
 for(const id of ['spread','scale','speed'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};$('sensitivity').oninput=e=>$('sensitivityValue').textContent=(+e.target.value).toFixed(1)+'×';$('motion').onchange=e=>state.motion=e.target.checked;$('elastic').onchange=e=>state.elastic=e.target.checked;$('wire').onchange=e=>material.wireframe=e.target.checked;$('space').onchange=e=>gallery.setVisible(e.target.checked);$('base').onchange=e=>{if(baseMesh)baseMesh.visible=e.target.checked};
 $('calibrate').onclick=()=>{if(sensors.kind!=='eye')return;calibration={start:performance.now(),values:[]};gazeZero=null;$('calibrate').textContent='校准中，请保持头部稳定…';status('看向模型中央，自然睁眼，约 2 秒完成校准。')};
 const concept = $('concept');
@@ -238,7 +266,6 @@ concept.addEventListener('click', event => {
  pressedBackdrop = false;
 });
 function reset() {
- stopOpening();
  press = null;
  drag = dragPull = false;
  particleAmount = particleBurst = 0;
@@ -285,11 +312,10 @@ renderer.domElement.setAttribute('aria-label', '互动雕塑');
 let press=null;
 renderer.domElement.onpointerdown=e=>{
  if(!e.isPrimary||e.button!==0||press)return;
- press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,at:performance.now(),moved:false};
+ press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,at:performance.now(),moved:false,opening:watchingOpening()};
  renderer.domElement.setPointerCapture(e.pointerId);
 };
 function beginDrag(e) {
- if (!state.frozen) stopOpening();
  if (voice.waiting) voice.resume();
  if (state.mode !== 'manual' || state.demo) selectMode('manual');
  drag = true;
@@ -342,11 +368,19 @@ renderer.domElement.onpointermove = e => {
 };
 renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!press||e.pointerId!==press.id)return;
  const tap=e.type==='pointerup'&&!drag&&!press.moved&&performance.now()-press.at<650;
+ const startedInOpening = press.opening;
  press=null;
- if(!drag){if(tap)togglePause();return;}if(state.mouseTool!=='rotate'&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
+ if(!drag){
+  if(tap && startedInOpening && watchingOpening()) showOpeningChoice();
+  if(tap && !startedInOpening) togglePause();
+  return;
+ }if(state.mouseTool!=='rotate'&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
 renderer.domElement.onpointerleave=()=>{if(!drag&&state.mode==='manual'&&!state.demo)field.clear()};
-renderer.domElement.ondblclick=()=>emitPulse(true);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
-addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)selectMouseTool(Object.keys(shapes)[Number(e.key)-1])});
+renderer.domElement.ondblclick=()=>{if(!watchingOpening())emitPulse(true)};renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();if(watchingOpening())return;state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
+addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(watchingOpening()){
+ if(e.code==='Space'||e.key==='Enter'){e.preventDefault();showOpeningChoice();$('openingContinue').focus({preventScroll:true})}
+ return;
+}if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)selectMouseTool(Object.keys(shapes)[Number(e.key)-1])});
 const canvas=$('skeleton'),ctx=canvas.getContext('2d');
 function drawHands(hands){ctx.clearRect(0,0,640,480);for(const [j,hand] of hands.entries()){ctx.strokeStyle=j?'#d6cbb5':'#d6e2c7';ctx.lineWidth=2;for(const chain of [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]]){ctx.beginPath();chain.forEach((i,k)=>{const p=hand[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}ctx.fillStyle='#fff';for(const p of hand){ctx.beginPath();ctx.arc(p.x*640,p.y*480,2.5,0,Math.PI*2);ctx.fill()}}}
 function drawEyes(points){ctx.clearRect(0,0,640,480);ctx.strokeStyle='#d6e2c7';ctx.lineWidth=2;for(const indexes of [[33,160,158,133,153,144,33],[362,385,387,263,373,380,362]]){ctx.beginPath();indexes.forEach((i,k)=>{const p=points[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}for(const i of [468,473]){const p=points[i];if(p){ctx.beginPath();ctx.arc(p.x*640,p.y*480,4,0,Math.PI*2);ctx.stroke()}}}
@@ -381,7 +415,7 @@ function trackFrame(now){const result=sensors.frame(now);if(!result)return;
  }
 }
 function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(samples){const level=audioLevel(samples,+$('sensitivity').value);targets.inflate=level*.9;targets.stretch=0;targets.twist=0;const frequency=sensors.frequency();field.feed({position:level>.015?spectralPosition(frequency.bins,frequency.sampleRate,frequency.minDb,frequency.maxDb):.5,energy:level,motion:clamp(Math.abs(level-lastAudioLevel)*12,0,1)},now);lastAudioLevel=level;if(beat.update(level,now))emitPulse();$('audioMeter').style.width=(level*100)+'%';all('.meter')[0].setAttribute('aria-valuenow',Math.round(level*100));describeShape('inflate');poseLabel('声音 · 体积起伏','麦克风 · 实时音量')}}catch(e){sensors.stop();clearTargets();status('识别中断，输入已关闭。可以重试或用模拟手势。');syncSensorUI();console.error(e)}}
-loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(!document.hidden && !state.frozen && state.mode!=='audio')voice.start()}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
+loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(!document.hidden && !state.frozen && state.mode!=='audio')voice.start()}).catch(e=>{finishOpening();status('模型未能加载，请刷新重试。');console.error(e)});
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
 function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now-lastTime)/1000:0,dt=Math.min(elapsed,.1);lastTime=now;sensorTick(now);
  if(!state.frozen){stepOpening(openingPending?0:elapsed);if(state.motion||state.demo)phase+=dt*state.speed;
@@ -392,12 +426,13 @@ function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now
   root.rotation.x=blend(root.rotation.x,state.pitch,dt,7);root.rotation.y=blend(root.rotation.y,state.rotation,dt,7);root.rotation.z=blend(root.rotation.z,state.roll,dt,7);const size=blend(root.scale.x,state.scale,dt);root.scale.setScalar(size);
   updateAppearance(dt,now);
   particleBurst=Math.max(0,particleBurst-dt*.6);
-  if(press&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
-  particleHold=drag&&!dragPull&&(state.mouseTool!=='rotate'||!press?.moved)&&now-lastPointerMotion>650;
+  if(press&&!press.opening&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
+  particleHold=!press?.opening&&drag&&!dragPull&&(state.mouseTool!=='rotate'||!press?.moved)&&now-lastPointerMotion>650;
   const live=sensors.kind==='hand'&&tracked?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
   particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),state.look==='quiet'?['#454545','#999999']:LOOKS[state.look].colors,openingActive);
   if (ready && voice.active) {
    voice.active.update(dt, {
+    openingTime: openingActive ? openingElapsed : null,
     scatter: particles.amount, scale: size, inflate: current.inflate,
     stretch: current.stretch, twist: current.twist, pull: current.grip * (1 + smoothDelta.length()),
     suggestion: hasTrace ? conformity : 0
@@ -411,4 +446,4 @@ function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now
  if(now-lastUI>100){updateControls();lastUI=now}renderer.render(scene,camera)
 }
 addEventListener('pagehide',()=>{voice.off();sensors.stop()});document.addEventListener('visibilitychange',()=>{lastTime=0;voice.setPaused(document.hidden||state.frozen);if(document.hidden&&(sensors.kind||sensors.starting)){sensors.stop();clearTargets();calibration=null;status('页面进入后台，设备已关闭。返回后可重新开启。');syncSensorUI()}});
-selectMode('manual');describeShape('inflate');palette('mint');setLook('quiet');updateControls();if(!document.hidden)voice.start();requestAnimationFrame(animate);
+selectMode('manual');describeShape('inflate');palette('mint');setLook('quiet');updateControls();setupOpeningControls();if(!document.hidden)voice.start();requestAnimationFrame(animate);

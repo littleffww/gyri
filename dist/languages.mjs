@@ -1,4 +1,8 @@
 const rows=`
+开场时可拖动旋转，轻点选择是否暂停。|Drag to rotate during the opening. Tap for playback options.|オープニング中もドラッグで回転できます。タップで再生オプションを表示します。
+开场播放选项|Opening playback options|オープニングの再生オプション
+继续观看|Keep watching|続けて見る
+暂停播放|Pause playback|一時停止
 已恢复原状|Original restored|元に戻しました
 恢复原状|Restore original|元に戻す
 点一下听人声|Tap to hear the voice|タップして声を聴く

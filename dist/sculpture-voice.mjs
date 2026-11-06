@@ -55,7 +55,8 @@ export class SculptureVoice {
       + Math.abs(shape.scale - previous.scale) + Math.abs(shape.inflate - previous.inflate)
       + Math.abs(shape.stretch - previous.stretch) * 0.6 + Math.abs(shape.twist - previous.twist) * 0.45
       + Math.abs(shape.pull - previous.pull) * 0.65 + Math.abs(shape.suggestion - previous.suggestion)) / dt;
-    if (speed > 0.026) this.lastMotion = now;
+    const inOpening = Number.isFinite(shape.openingTime);
+    if (inOpening || speed > 0.026) this.lastMotion = now;
     const moving = now - this.lastMotion < 0.28;
     if (!this.source && !moving) return;
     if (!this.source) {
@@ -63,6 +64,7 @@ export class SculptureVoice {
       source.buffer = this.recording;
       source.loop = true;
       source.connect(this.envelope);
+      if (inOpening) this.position = shape.openingTime % this.recording.duration;
       source.start(now, this.position);
       this.source = source;
       this.lastTick = now;
