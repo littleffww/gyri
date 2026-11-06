@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
-import {createParticles} from './particles.mjs?v=agency-final';
-import './languages.mjs?v=auto-v7.7';
-import {connectVoiceButton} from './sculpture-voice.mjs?v=auto-v7.7';
+import {createParticles} from './particles.mjs?v=front-v7.8';
+import './languages.mjs?v=front-v7.8';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=front-v7.8';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -9,7 +9,7 @@ import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbo
 import {createGallery} from './gallery.mjs?v=agency-final';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
-const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',spread:.7,scale:1,rotation:.55,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
+const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
 const state={...defaults};
 const field=new ResponseField();let routes=defaultRoutes();
 let lastAudioLevel=0;
@@ -20,7 +20,7 @@ const poseFilter=new StablePose(),blink=new BlinkTrigger(),beat=new RisingBeat()
 let conformity=0,hasTrace=false,lastPointerMotion=0;
 let particles=null,particleAmount=0,particleHold=false,particleBurst=0;
 const openingLegSeconds = 10;
-const openingHoldSeconds = 1.5;
+const openingHoldSeconds = 2;
 let openingPending = state.motion;
 let openingActive = false;
 let openingElapsed = 0;
@@ -33,7 +33,7 @@ const shapes={
  pull:{number:'05 / TOUCH',title:'捏合 · 牵引局部',description:'手的高度决定触碰的位置。<br>捏住、移动，再松开。'}
 };
 const modes = {
- manual: {badge: '鼠标', guide: '拖动雕塑塑形，按住不动让它散开。'},
+ manual: {badge: '鼠标', guide: '轻点暂停或继续，拖动塑形，长按散开。'},
  hand: {badge: '手势', guide: '张掌膨胀，握拳压缩。双手拉伸，捏合牵引。'},
  eye: {badge: '目光', guide: '看向中央校准，再左右看。眨眼释放粒子。'},
  audio: {badge: '声音', guide: '对着麦克风轻声哼唱，或拍手释放粒子。'}
@@ -51,19 +51,15 @@ if (!voiceButton) {
  $('instructions').before(voiceButton);
 }
 const voice = connectVoiceButton(voiceButton, toast);
-// Consume the first tap on the stage only when it is needed to unlock audio.
-let unlockingOnStage = false;
+// The stage owns its gestures: a tap always pauses, even if autoplay was blocked.
 function unlockVoice(event) {
- if (event.type === 'pointerdown') unlockingOnStage = false;
- if (event.target.closest?.('#voiceSwitch') || !voice.waiting) return;
- if (openingActive && event.target.closest?.('#stage')) unlockingOnStage = true;
- voice.resume();
+ if (event.target.closest?.('#voiceSwitch, #stage, #freeze') || event.code === 'Space') return;
+ if (voice.waiting) voice.resume();
 }
-for (const type of ['pointerdown', 'pointerup', 'click', 'keydown']) {
- document.addEventListener(type, unlockVoice, {capture:true, passive:true});
-}
+for (const type of ['click', 'keydown']) document.addEventListener(type, unlockVoice, {capture:true});
 function stopOpening(event) {
- if (event.target.closest?.('#voiceSwitch, .languages') || unlockingOnStage) return;
+ if (event?.target.closest?.('#voiceSwitch, .languages, #freeze') || event?.code === 'Space') return;
+ if (event?.type === 'pointerdown' && event.target.closest?.('#stage')) return;
  openingPending = false;
  if (!openingActive) return;
  openingActive = false;
@@ -78,7 +74,7 @@ function beginOpening() {
  openingElapsed = 0;
  openingActive = true;
  voice.start();
- status('开场演示中，触碰即可开始操作。');
+ status('开场演示中，轻点雕塑可暂停。');
 }
 function stepOpening(dt) {
  if (!ready || document.hidden) return;
@@ -90,7 +86,8 @@ function stepOpening(dt) {
  const progress = clamp(Math.min(openingElapsed, duration - openingElapsed) / openingLegSeconds, 0, 1);
  // Ease into the fully scattered pose, hold it, then retrace the same curve.
  particleAmount = progress * progress * (3 - 2 * progress);
- $('particleRange').value = particleAmount;
+ // Reserve 100% on the readout for the actual two-second hold.
+ $('particleRange').value = particleAmount === 1 ? 1 : Math.min(.99, particleAmount);
  if (openingElapsed >= duration) {
   openingActive = false;
   status('');
@@ -110,14 +107,16 @@ const gallery=createGallery(scene,renderer);
 const root=new THREE.Group();scene.add(root);
 const {material,uniforms,depthMaterial}=makeSoftMaterial();
 const marker=new THREE.Mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({color:'#333333',transparent:true,opacity:.6,depthTest:false}));const markerMaterial=marker.material;root.add(marker);marker.visible=false;marker.renderOrder=10;
-function layout(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const mobile=innerWidth<=760;camera.position.set(0,mobile?1.5:1.7,mobile?17:10.3);const width=2*Math.tan(THREE.MathUtils.degToRad(18))*camera.position.z*camera.aspect;root.position.set(mobile?.35:-width*.035,mobile?1.35:-.09,0);camera.lookAt(0,mobile?.35:-.15,0);gallery.update(root.position.x,root.position.y)}layout();addEventListener('resize',layout);
+function layout(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const mobile=innerWidth<=760;camera.position.set(0,mobile?1.5:1.7,mobile?17:10.3);const width=2*Math.tan(THREE.MathUtils.degToRad(18))*camera.position.z*camera.aspect;root.position.set(mobile?.35:-width*.035,mobile?1.35:-.09,0);camera.position.set(root.position.x,root.position.y,camera.position.z);
+camera.lookAt(root.position);const height=width/camera.aspect;
+camera.setViewOffset(innerWidth,innerHeight,-root.position.x/width*innerWidth,(root.position.y-(mobile?.35:-.15))/height*innerHeight,innerWidth,innerHeight);gallery.update(root.position.x,root.position.y)}layout();addEventListener('resize',layout);
 const sensors=new Sensors($('video'),message=>{if(!sensors.kind&&!sensors.starting)clearTargets();status(message);syncSensorUI()});
 function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';}
-function updateControls(){$('voiceSwitch').disabled=state.mode==='audio'||state.frozen;for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
+function updateControls(){$('voiceSwitch').disabled=state.mode==='audio';for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
  all('[data-shape]').forEach(b=>{const active=state.mode==='manual'&&state.shape===b.dataset.shape&&Object.values(targets).some(v=>Math.abs(v)>.02);b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
 }
-function selectMode(mode){if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio'||state.frozen;sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
-function simulate(shape,fromDemo=false){if(!fromDemo){selectMode('manual');state.frozen=false}describeShape(shape);clearTargets();targetAxis.set(1,0,0);if(shape==='inflate')targets.inflate=.85;if(shape==='compress')targets.inflate=-.48;if(shape==='stretch')targets.stretch=1.15;if(shape==='twist')targets.twist=1.6;if(shape==='pull'){grabPoint.set(0,.65,0);targetDelta.set(1.1,.45,.2);targets.grip=1}const simulation={inflate:{position:.8,energy:.95,motion:.35},compress:{position:.15,energy:.08,motion:.2},stretch:{position:.62,energy:.65,motion:.6},twist:{position:.22,energy:.72,motion:.9},pull:{position:.92,energy:.5,motion:.55}}[shape];field.feed(simulation,performance.now(),true);field.trigger(performance.now());poseLabel(shapes[shape].title,fromDemo?'自动演示 · 模拟输入':'模拟输入 · 未使用摄像头');if(!fromDemo)status('模拟手势效果，未使用摄像头。');updateControls()}
+function selectMode(mode){if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio';sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
+function simulate(shape,fromDemo=false){if(!fromDemo){selectMode('manual');setPaused(false)}describeShape(shape);clearTargets();targetAxis.set(1,0,0);if(shape==='inflate')targets.inflate=.85;if(shape==='compress')targets.inflate=-.48;if(shape==='stretch')targets.stretch=1.15;if(shape==='twist')targets.twist=1.6;if(shape==='pull'){grabPoint.set(0,.65,0);targetDelta.set(1.1,.45,.2);targets.grip=1}const simulation={inflate:{position:.8,energy:.95,motion:.35},compress:{position:.15,energy:.08,motion:.2},stretch:{position:.62,energy:.65,motion:.6},twist:{position:.22,energy:.72,motion:.9},pull:{position:.92,energy:.5,motion:.55}}[shape];field.feed(simulation,performance.now(),true);field.trigger(performance.now());poseLabel(shapes[shape].title,fromDemo?'自动演示 · 模拟输入':'模拟输入 · 未使用摄像头');if(!fromDemo)status('模拟手势效果，未使用摄像头。');updateControls()}
 function release(announce=true){state.demo=false;clearTargets();poseLabel('松手 · 等待下一次决定',sensors.kind?'实时输入仍开启':'模拟输入');if(announce)toast(sensors.kind?'已释放；下一个实时动作会继续控制模型':'松手，让形体恢复');updateControls()}
 function emitPulse(announce=false){if(state.frozen)return;pulseAge=0;trace=1;particleBurst=1;field.trigger(performance.now());if(announce)toast('波纹正在穿过表面')}
 function setLook(name){state.look=LOOKS[name]?name:'acid';const look=LOOKS[state.look];uniforms.uArtMix.value=state.look==='quiet'?0:1;uniforms.uPigmentA.value.set(look.colors[0]);uniforms.uPigmentB.value.set(look.colors[1]);uniforms.uPigmentC.value.set(look.colors[2]);gallery.setColors(look.colors[0],look.colors[1]);all('[data-look]').forEach(b=>{const active=b.dataset.look===state.look;b.setAttribute('aria-pressed',String(active));b.classList.toggle('selected',active)});}
@@ -143,7 +142,7 @@ $('roomColor').onchange=e=>state.roomColor=e.target.checked;
 for(const id of ['reactivity','memory'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};
 function palette(name){state.palette=name;const p={mint:{body:'#999999',roughness:.36,metalness:.72,env:1.1},violet:{body:'#777777',roughness:.64,metalness:0,env:.24},amber:{body:'#ae7660',roughness:.83,metalness:0,env:.4}}[name];material.color.set(p.body);material.roughness=p.roughness;material.metalness=p.metalness;material.envMapIntensity=p.env;all('[data-palette]').forEach(b=>{const selected=b.dataset.palette===name;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected))})}
 all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>simulate(b.dataset.shape));all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
-$('sensorStart').onclick=async()=>{state.demo=false;state.frozen=false;const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
+$('sensorStart').onclick=async()=>{state.demo=false;setPaused(false);const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
 $('sensorStop').onclick=()=>{sensors.stop();release(false);tracked=false;poseFilter.reset();calibration=null;poseLabel('松手 · 缓慢回弹','设备已关闭');status('输入已关闭，模型将回弹。可以继续模拟动作。');syncSensorUI()};
 $('release').onclick=()=>{particleAmount=0;particleHold=false;particleBurst=0;$('particleRange').value=0;release()};
 function savePersonalTrace(announce=true){
@@ -162,12 +161,23 @@ $('scatter').onclick=()=>{particleAmount=1;$('particleRange').value=1};
 $('gather').onclick=()=>{particleAmount=0;particleHold=false;particleBurst=0;$('particleRange').value=0;release(false)};
 $('particleRange').oninput=e=>particleAmount=+e.target.value;
 all('[data-form]').forEach(b=>b.onclick=()=>{release(false);particles?.setForm(b.dataset.form);particleAmount=0;$('particleRange').value=0;all('[data-form]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
-$('demo').onclick=()=>{const next=!state.demo;if(next){selectMode('manual');state.frozen=false;demoTime=0;demoStep=-1}state.demo=next;if(!next)clearTargets();status(next?'正在依次模拟张掌、握拳、拉伸、扭曲和局部牵引。':'演示已停止，身体正在恢复。');updateControls()};
-$('freeze').onclick=()=>{state.frozen=!state.frozen;if(state.frozen)voice.off();updateControls();toast(state.frozen?(sensors.kind?'画面暂停；实时输入仍开启':'画面已暂停'):'继续运动')};
+$('demo').onclick=()=>{const next=!state.demo;if(next){selectMode('manual');setPaused(false);demoTime=0;demoStep=-1}state.demo=next;if(!next)clearTargets();status(next?'正在依次模拟张掌、握拳、拉伸、扭曲和局部牵引。':'演示已停止，身体正在恢复。');updateControls()};
+function setPaused(paused) {
+ if (state.frozen === paused) return;
+ state.frozen=paused;
+ lastTime=0;
+ voice.setPaused(paused);
+ updateControls();
+}
+function togglePause() {
+ setPaused(!state.frozen);
+ toast(state.frozen?(sensors.kind?'画面暂停；实时输入仍开启':'画面已暂停'):'继续运动');
+}
+$('freeze').onclick=togglePause;
 for(const id of ['spread','scale','speed'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};$('sensitivity').oninput=e=>$('sensitivityValue').textContent=(+e.target.value).toFixed(1)+'×';$('motion').onchange=e=>state.motion=e.target.checked;$('elastic').onchange=e=>state.elastic=e.target.checked;$('wire').onchange=e=>material.wireframe=e.target.checked;$('space').onchange=e=>gallery.setVisible(e.target.checked);$('base').onchange=e=>{if(baseMesh)baseMesh.visible=e.target.checked};
 $('calibrate').onclick=()=>{if(sensors.kind!=='eye')return;calibration={start:performance.now(),values:[]};gazeZero=null;$('calibrate').textContent='校准中，请保持头部稳定…';status('看向模型中央，自然睁眼，约 2 秒完成校准。')};
 $('conceptOpen').onclick=()=>$('concept').showModal();$('conceptClose').onclick=()=>$('concept').close();
-function reset(){voice.off();clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
+function reset(){voice.off();clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);voice.setPaused(false);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
 $('reset').onclick=reset;$('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('当前浏览器不支持全屏')}};
 $('snapshot').onclick=()=>{if(!ready)return;renderer.render(scene,camera);renderer.domElement.toBlob(blob=>{if(!blob){toast('保存失败，请重试');return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gyri-UNSMOOTH-${Date.now()}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('已保存场景，不包含摄像头画面')},'image/png')};
 let drag=false,dragPull=false,px=0,py=0,mouseOrigin=null;
@@ -175,11 +185,23 @@ function pointerResponse(e){field.feed({position:e.clientX/innerWidth,energy:1-e
 renderer.domElement.style.touchAction='none';
 renderer.domElement.tabIndex = 0;
 renderer.domElement.setAttribute('aria-label', '互动雕塑');
-renderer.domElement.addEventListener('click', () => { unlockingOnStage = false; });
-renderer.domElement.addEventListener('pointercancel', () => { unlockingOnStage = false; });
-renderer.domElement.onpointerdown=e=>{if(unlockingOnStage)return;if(sensors.kind||sensors.starting||state.mode!=='manual')selectMode('manual');state.demo=false;particleHold=false;lastPointerMotion=performance.now();drag=true;dragPull=state.shape==='pull'||e.shiftKey;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);if(dragPull){clearTargets();describeShape('pull');grabPoint.set(0,clamp((.5-e.clientY/innerHeight)*5,-1.6,1.6),0);targetDelta.set(0,0,0);targets.grip=1;mouseOrigin={x:e.clientX,y:e.clientY};poseLabel('拖动 · 局部牵引','鼠标输入')}pointerResponse(e);field.trigger(performance.now());updateControls()};
-renderer.domElement.onpointermove=e=>{if(state.mode==='manual'&&!state.demo&&!state.frozen)pointerResponse(e);if(!drag||state.frozen)return;particleHold=false;lastPointerMotion=performance.now();if(dragPull){targetDelta.set(clamp((e.clientX-mouseOrigin.x)/innerWidth*7,-1.6,1.6),clamp((mouseOrigin.y-e.clientY)/innerHeight*5,-1.6,1.6),.15)}else if(e.altKey){state.rotation+=(e.clientX-px)*.008;state.roll=clamp(state.roll+(e.clientY-py)*.002,-.4,.4)}else{const dx=(e.clientX-px)/innerWidth*8,dy=(py-e.clientY)/innerHeight*7;if(state.shape==='inflate')targets.inflate=clamp(targets.inflate+dy,-.45,1.1);if(state.shape==='compress')targets.inflate=clamp(targets.inflate-Math.abs(dy)-Math.abs(dx)*.5,-.6,0);if(state.shape==='stretch')targets.stretch=clamp(targets.stretch+dx,-.5,1.6);if(state.shape==='twist')targets.twist=clamp(targets.twist+dx*2,-2.2,2.2)}px=e.clientX;py=e.clientY};
-renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!drag)return;if(drag&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
+let press=null;
+renderer.domElement.onpointerdown=e=>{
+ if(!e.isPrimary||e.button!==0||press)return;
+ press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,at:performance.now(),moved:false};
+ renderer.domElement.setPointerCapture(e.pointerId);
+};
+function beginDrag(e){
+ stopOpening();
+ if(voice.waiting)voice.resume();
+ if(sensors.kind||sensors.starting||state.mode!=='manual')selectMode('manual');state.demo=false;particleHold=false;lastPointerMotion=performance.now();drag=true;dragPull=state.shape==='pull'||e.shiftKey;px=e.clientX;py=e.clientY;if(dragPull){clearTargets();describeShape('pull');grabPoint.set(0,clamp((.5-e.clientY/innerHeight)*5,-1.6,1.6),0);targetDelta.set(0,0,0);targets.grip=1;mouseOrigin={x:e.clientX,y:e.clientY};poseLabel('拖动 · 局部牵引','鼠标输入')}pointerResponse(e);field.trigger(performance.now());updateControls()};
+renderer.domElement.onpointermove=e=>{if(press&&e.pointerId!==press.id)return;
+ if(press&&!drag&&Math.hypot(e.clientX-press.clientX,e.clientY-press.clientY)>6){press.moved=true;if(!state.frozen)beginDrag(press)}
+ if(state.mode==='manual'&&!state.demo&&!state.frozen)pointerResponse(e);if(!drag||state.frozen)return;particleHold=false;lastPointerMotion=performance.now();if(dragPull){targetDelta.set(clamp((e.clientX-mouseOrigin.x)/innerWidth*7,-1.6,1.6),clamp((mouseOrigin.y-e.clientY)/innerHeight*5,-1.6,1.6),.15)}else if(e.altKey){state.rotation+=(e.clientX-px)*.008;state.roll=clamp(state.roll+(e.clientY-py)*.002,-.4,.4)}else{const dx=(e.clientX-px)/innerWidth*8,dy=(py-e.clientY)/innerHeight*7;if(state.shape==='inflate')targets.inflate=clamp(targets.inflate+dy,-.45,1.1);if(state.shape==='compress')targets.inflate=clamp(targets.inflate-Math.abs(dy)-Math.abs(dx)*.5,-.6,0);if(state.shape==='stretch')targets.stretch=clamp(targets.stretch+dx,-.5,1.6);if(state.shape==='twist')targets.twist=clamp(targets.twist+dx*2,-2.2,2.2)}px=e.clientX;py=e.clientY};
+renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!press||e.pointerId!==press.id)return;
+ const tap=e.type==='pointerup'&&!drag&&!press.moved&&performance.now()-press.at<650;
+ press=null;
+ if(!drag){if(tap)togglePause();return;}if(drag&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
 renderer.domElement.onpointerleave=()=>{if(!drag&&state.mode==='manual'&&!state.demo)field.clear()};
 renderer.domElement.ondblclick=()=>emitPulse(true);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
 addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)simulate(Object.keys(shapes)[Number(e.key)-1])});
@@ -219,8 +241,8 @@ function trackFrame(now){const result=sensors.frame(now);if(!result)return;
 function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(samples){const level=audioLevel(samples,+$('sensitivity').value);targets.inflate=level*.9;targets.stretch=0;targets.twist=0;const frequency=sensors.frequency();field.feed({position:level>.015?spectralPosition(frequency.bins,frequency.sampleRate,frequency.minDb,frequency.maxDb):.5,energy:level,motion:clamp(Math.abs(level-lastAudioLevel)*12,0,1)},now);lastAudioLevel=level;if(beat.update(level,now))emitPulse();$('audioMeter').style.width=(level*100)+'%';all('.meter')[0].setAttribute('aria-valuenow',Math.round(level*100));describeShape('inflate');poseLabel('声音 · 体积起伏','麦克风 · 实时音量')}}catch(e){sensors.stop();clearTargets();status('识别中断，输入已关闭。可以重试或用模拟手势。');syncSensorUI();console.error(e)}}
 loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(!document.hidden && !state.frozen && state.mode!=='audio')voice.start()}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
-function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min((now-lastTime)/1000,.1):.016;lastTime=now;sensorTick(now);
- if(!state.frozen){stepOpening(dt);if(state.motion||state.demo)phase+=dt*state.speed;
+function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now-lastTime)/1000:0,dt=Math.min(elapsed,.1);lastTime=now;sensorTick(now);
+ if(!state.frozen){stepOpening(openingPending?0:elapsed);if(state.motion||state.demo)phase+=dt*state.speed;
   if(state.demo){demoTime+=dt*state.speed;const stage=Math.floor(demoTime/4.8)%6;if(stage!==demoStep){demoStep=stage;if(stage<5)simulate(Object.keys(shapes)[stage],true);else{clearTargets();poseLabel('松手 · 缓慢回弹','自动演示 · 模拟输入')}}if(stage===2)targetAxis.set(Math.cos(demoTime*.12),Math.sin(demoTime*.12),0);if(stage===4)targetDelta.set(.8+Math.sin(demoTime)*.3,.35,.2);if(stage<5)field.feed({position:.5+Math.sin(demoTime*.4)*.4,energy:.5+Math.sin(demoTime*.65)*.45,motion:.3+Math.sin(demoTime*.7)*.2},now,true)}
   let energy=0;for(const k in current){let goal=targets[k]*(k==='grip'?1:state.spread)*(1-conformity);[current[k],velocity[k]]=springStep(current[k],velocity[k],goal,dt,state.elastic);energy+=Math.abs(current[k])*.3;trace=Math.max(trace,Math.min(1,Math.abs(velocity[k])*.12))}
   trace*=Math.exp(-dt*(state.elastic?.65:3));pulseAge+=dt;
@@ -228,9 +250,10 @@ function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min(
   root.rotation.y=blend(root.rotation.y,state.rotation,dt,7);root.rotation.z=blend(root.rotation.z,state.roll,dt,7);const size=blend(root.scale.x,state.scale,dt);root.scale.setScalar(size);
   updateAppearance(dt,now);
   particleBurst=Math.max(0,particleBurst-dt*.6);
+  if(press&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
   particleHold=drag&&!dragPull&&now-lastPointerMotion>650;
   const live=sensors.kind==='hand'&&tracked?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
-  particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),state.look==='quiet'?['#454545','#999999']:LOOKS[state.look].colors);
+  particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),state.look==='quiet'?['#454545','#999999']:LOOKS[state.look].colors,openingActive);
   if (ready && voice.active) {
    voice.active.update(dt, {
     scatter: particles.amount, scale: size, inflate: current.inflate,
@@ -245,5 +268,5 @@ function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min(
  }
  if(now-lastUI>100){updateControls();lastUI=now}renderer.render(scene,camera)
 }
-addEventListener('pagehide',()=>{voice.off();sensors.stop()});document.addEventListener('visibilitychange',()=>{if(document.hidden)voice.off();if(document.hidden&&(sensors.kind||sensors.starting)){sensors.stop();clearTargets();calibration=null;status('页面进入后台，设备已关闭。返回后可重新开启。');syncSensorUI()}});
-selectMode('manual');describeShape('inflate');palette('mint');setLook('quiet');updateControls();requestAnimationFrame(animate);
+addEventListener('pagehide',()=>{voice.off();sensors.stop()});document.addEventListener('visibilitychange',()=>{lastTime=0;voice.setPaused(document.hidden||state.frozen);if(document.hidden&&(sensors.kind||sensors.starting)){sensors.stop();clearTargets();calibration=null;status('页面进入后台，设备已关闭。返回后可重新开启。');syncSensorUI()}});
+selectMode('manual');describeShape('inflate');palette('mint');setLook('quiet');updateControls();if(!document.hidden)voice.start();requestAnimationFrame(animate);

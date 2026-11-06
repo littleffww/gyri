@@ -93,8 +93,9 @@ export function connectVoiceButton(button, reportError) {
   let session = null;
   let recording = null;
   let enabled = true;
+  let paused = false;
   function waiting() {
-    return enabled && !!session && session.context.state !== 'running';
+    return enabled && !paused && !!session && session.context.state !== 'running';
   }
   function syncButton() {
     const audible = enabled && !!session?.voice && !waiting();
@@ -144,6 +145,17 @@ export function connectVoiceButton(button, reportError) {
   function resume() {
     if (waiting()) session.context.resume().catch(() => {});
   }
+  function setPaused(value) {
+    if (paused === value) return;
+    paused = value;
+    if (session && enabled) {
+      // Queue both transitions, even if the previous statechange is still pending.
+      const ctx = session.context;
+      if (paused) ctx.suspend().catch(() => {});
+      else ctx.resume().catch(() => {});
+    }
+    syncButton();
+  }
   button.onclick = () => {
     if (waiting()) { resume(); return; }
     if (enabled) return off();
@@ -151,6 +163,6 @@ export function connectVoiceButton(button, reportError) {
     syncButton();
     start();
   };
-  return {start, off, resume, get waiting() { return waiting(); },
-    get active() { return session?.context.state === 'running' ? session.voice : null; }};
+  return {start, off, resume, setPaused, get waiting() { return waiting(); },
+    get active() { return !paused && session?.context.state === 'running' ? session.voice : null; }};
 }

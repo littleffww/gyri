@@ -40,8 +40,8 @@ export function createParticles(geometry,root,shared=makeSoftMaterial().uniforms
  return {
  setForm(name){if(!names.includes(name)||name===form)return;form=name;migrating=true;},
  updateTrace(trace){const dst=geo.attributes.aTrace.array;for(let j=0;j<n*3;j+=3)for(let k=0;k<3;k++){dst[j+k]=0;for(let b=0;b<3;b++)dst[j+k]+=trace[samples[j+b]*3+k]*weights[j+b]}geo.attributes.aTrace.needsUpdate=true;},
- update(dt,amount,colors){
-  const goal=migrating?1:T.MathUtils.clamp(amount,0,1);s+=(goal-s)*(1-Math.exp(-dt*3.2));if(Math.abs(goal-s)<.0001)s=goal;
+ update(dt,amount,colors,opening=false){
+  const goal=migrating?1:T.MathUtils.clamp(amount,0,1);s=opening&&!migrating?goal:s+(goal-s)*(1-Math.exp(-dt*3.2));if(Math.abs(goal-s)<.0001)s=goal;
   if(migrating&&s>.86){const wanted=names.indexOf(form),w=formWeights.toArray();let error=0;for(let k=0;k<4;k++){w[k]+=((k===wanted?1:0)-w[k])*(1-Math.exp(-dt*4));error+=Math.abs((k===wanted?1:0)-w[k])}if(error<.002){w.fill(0);w[wanted]=1;migrating=false}formWeights.fromArray(w)}
   uniforms.scatter.value=s;shared.uDissolve.value=Math.max(s,1-formWeights.x);
   uniforms.tint.value.set(colors[0]);uniforms.tintB.value.set(colors[1]);points.visible=shared.uDissolve.value>.005;
