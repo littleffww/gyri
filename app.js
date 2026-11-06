@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=front-v7.8';
-import './languages.mjs?v=front-v7.8';
-import {connectVoiceButton} from './sculpture-voice.mjs?v=front-v7.8';
+import './languages.mjs?v=details-v7.9';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=details-v7.9';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -58,7 +58,7 @@ function unlockVoice(event) {
 }
 for (const type of ['click', 'keydown']) document.addEventListener(type, unlockVoice, {capture:true});
 function stopOpening(event) {
- if (event?.target.closest?.('#voiceSwitch, .languages, #freeze') || event?.code === 'Space') return;
+ if (event?.target.closest?.('#voiceSwitch, .languages, #freeze, #conceptOpen, #concept') || event?.code === 'Space') return;
  if (event?.type === 'pointerdown' && event.target.closest?.('#stage')) return;
  openingPending = false;
  if (!openingActive) return;
@@ -176,7 +176,37 @@ function togglePause() {
 $('freeze').onclick=togglePause;
 for(const id of ['spread','scale','speed'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};$('sensitivity').oninput=e=>$('sensitivityValue').textContent=(+e.target.value).toFixed(1)+'×';$('motion').onchange=e=>state.motion=e.target.checked;$('elastic').onchange=e=>state.elastic=e.target.checked;$('wire').onchange=e=>material.wireframe=e.target.checked;$('space').onchange=e=>gallery.setVisible(e.target.checked);$('base').onchange=e=>{if(baseMesh)baseMesh.visible=e.target.checked};
 $('calibrate').onclick=()=>{if(sensors.kind!=='eye')return;calibration={start:performance.now(),values:[]};gazeZero=null;$('calibrate').textContent='校准中，请保持头部稳定…';status('看向模型中央，自然睁眼，约 2 秒完成校准。')};
-$('conceptOpen').onclick=()=>$('concept').showModal();$('conceptClose').onclick=()=>$('concept').close();
+const concept = $('concept');
+$('conceptOpen').onclick = () => {
+ if (concept.open) return;
+ concept.showModal();
+ // Establish the starting pose in the top layer before transitioning to its resting pose.
+ concept.getBoundingClientRect();
+ concept.classList.add('revealed');
+};
+async function closeConcept() {
+ if (!concept.classList.contains('revealed')) return;
+ concept.classList.remove('revealed');
+ const transitions = concept.getAnimations();
+ await Promise.allSettled(transitions.map(animation => animation.finished));
+ concept.close();
+}
+$('conceptClose').onclick = closeConcept;
+concept.addEventListener('cancel', event => {
+ event.preventDefault();
+ closeConcept();
+});
+function onBackdrop(event) {
+ const bounds = concept.getBoundingClientRect();
+ return event.target === concept && (event.clientX < bounds.left || event.clientX > bounds.right ||
+   event.clientY < bounds.top || event.clientY > bounds.bottom);
+}
+let pressedBackdrop = false;
+concept.addEventListener('pointerdown', event => { pressedBackdrop = onBackdrop(event); });
+concept.addEventListener('click', event => {
+ if (pressedBackdrop && onBackdrop(event)) closeConcept();
+ pressedBackdrop = false;
+});
 function reset(){voice.off();clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);voice.setPaused(false);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
 $('reset').onclick=reset;$('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('当前浏览器不支持全屏')}};
 $('snapshot').onclick=()=>{if(!ready)return;renderer.render(scene,camera);renderer.domElement.toBlob(blob=>{if(!blob){toast('保存失败，请重试');return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gyri-UNSMOOTH-${Date.now()}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('已保存场景，不包含摄像头画面')},'image/png')};

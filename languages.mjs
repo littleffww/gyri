@@ -1,5 +1,5 @@
 const rows=`
-轻点开启人声|Tap for sound|タップで音声をオン
+点一下听人声|Tap to hear the voice|タップして声を聴く
 轻点雕塑，听它散开，再聚合。|Tap the sculpture to hear it disperse and gather.|彫刻に触れて、粒子が広がり、集まる音を聴いてください。
 开启作品人声|Enable sculpture voice|作品の声をオン
 关闭作品人声|Mute sculpture voice|作品の声をオフ
