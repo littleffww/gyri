@@ -12,7 +12,9 @@ const rows=`
 Gyri 探索人在与 AI 共同创作时如何保留自己的判断。拖动或张开手掌，原本整齐的折片会偏移。点击「留下此刻」，刚才那个动作就有了形状。|Gyri explores how we keep our own judgment when creating with AI. Drag or open your palm to shift the folds. Select “Keep this moment” to preserve the shape of that gesture.|Gyriは、AIと共に制作する中で自分の判断をどう保つかを探る作品です。ドラッグしたり手のひらを開いたりすると、折り目が動きます。「この瞬間を残す」を押すと、その動きが形として残ります。
 「接受系统建议」会把雕塑推回预设的原形。试着把滑块往回拉，看看刚才留下的痕迹。你可以在两个形状之间停下。|“Accept the suggestion” draws the sculpture back towards its preset form. Slide it back to see the trace you left. You can stop anywhere between those two forms.|「システムの提案を受け入れる」を動かすと、彫刻は元の形に近づきます。スライダーを戻して、自分の動きの痕跡を見てください。二つの形の間で、好きなところに止められます。
 痕迹与系统建议|Traces and suggestions|痕跡とシステムの提案
-轻点暂停或继续，拖动塑形，长按散开。|Tap to pause or resume. Drag to shape; hold to disperse.|タップで一時停止・再開。ドラッグで変形、長押しで粒子が広がります。
+拖动旋转，轻点暂停。选下方工具后，拖动即可塑形。|Drag to rotate. Tap to pause. Choose a tool below, then drag to shape.|ドラッグで回転、タップで一時停止。下のツールを選んでドラッグすると変形します。
+旋转|Rotate|回転
+鼠标工具|Mouse tools|マウスツール
 张掌膨胀，握拳压缩。双手拉伸，捏合牵引。|Open your palm to inflate, close it to compress. Stretch with two hands or pinch to pull.|手を開くと膨らみ、握ると縮みます。両手で伸ばし、つまんで引けます。
 看向中央校准，再左右看。眨眼释放粒子。|Look at the centre to calibrate, then look left or right. Blink to release particles.|中央を見て調整してから、左右を見てください。まばたきで粒子が広がります。
 对着麦克风轻声哼唱，或拍手释放粒子。|Hum into the microphone, or clap to release particles.|マイクに向かってハミングするか、手をたたいて粒子を広げてください。

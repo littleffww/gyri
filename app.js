@@ -1,6 +1,6 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=restore-v7.12';
+import './languages.mjs?v=orbit-v7.13';
 import {connectVoiceButton} from './sculpture-voice.mjs?v=details-v7.9';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
@@ -9,7 +9,7 @@ import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbo
 import {createGallery} from './gallery.mjs?v=reflect-v7.10';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
-const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
+const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',mouseTool:'rotate',pitch:0,spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
 const state={...defaults};
 const field=new ResponseField();let routes=defaultRoutes();
 let lastAudioLevel=0;
@@ -33,7 +33,7 @@ const shapes={
  pull:{number:'05 / TOUCH',title:'捏合 · 牵引局部',description:'手的高度决定触碰的位置。<br>捏住、移动，再松开。'}
 };
 const modes = {
- manual: {badge: '鼠标', guide: '轻点暂停或继续，拖动塑形，长按散开。'},
+ manual: {badge: '鼠标', guide: '拖动旋转，轻点暂停。选下方工具后，拖动即可塑形。'},
  hand: {badge: '手势', guide: '张掌膨胀，握拳压缩。双手拉伸，捏合牵引。'},
  eye: {badge: '目光', guide: '看向中央校准，再左右看。眨眼释放粒子。'},
  audio: {badge: '声音', guide: '对着麦克风轻声哼唱，或拍手释放粒子。'}
@@ -116,7 +116,7 @@ const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.01,100);came
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})}catch(e){status('当前浏览器无法启动三维显示，请换用 Chrome / Safari。');throw e}
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;$('stage').appendChild(renderer.domElement);
 const gallery=createGallery(scene,renderer);
-const root=new THREE.Group();scene.add(root);
+const root=new THREE.Group();root.rotation.order='YXZ';scene.add(root);
 const {material,uniforms,depthMaterial}=makeSoftMaterial();
 const marker=new THREE.Mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({color:'#333333',transparent:true,opacity:.6,depthTest:false}));const markerMaterial=marker.material;root.add(marker);marker.visible=false;marker.renderOrder=10;
 function layout(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const mobile=innerWidth<=760;camera.position.set(0,mobile?1.5:1.7,mobile?17:10.3);const width=2*Math.tan(THREE.MathUtils.degToRad(18))*camera.position.z*camera.aspect;root.position.set(mobile?.35:-width*.035,mobile?1.35:-.09,0);camera.position.set(root.position.x,root.position.y,camera.position.z);
@@ -133,10 +133,20 @@ camera.setViewOffset(innerWidth,innerHeight,-root.position.x/width*innerWidth,(r
 const sensors=new Sensors($('video'),message=>{if(!sensors.kind&&!sensors.starting)clearTargets();status(message);syncSensorUI()});
 function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';}
 function updateControls(){$('voiceSwitch').disabled=state.mode==='audio';for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
- all('[data-shape]').forEach(b=>{const active=state.mode==='manual'&&state.shape===b.dataset.shape&&Object.values(targets).some(v=>Math.abs(v)>.02);b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
+ all('[data-shape]').forEach(b=>{const active=state.mode==='manual'&&!state.demo&&state.mouseTool===b.dataset.shape;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
 }
-function selectMode(mode){if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio';sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
-function simulate(shape,fromDemo=false){if(!fromDemo){selectMode('manual');setPaused(false)}describeShape(shape);clearTargets();targetAxis.set(1,0,0);if(shape==='inflate')targets.inflate=.85;if(shape==='compress')targets.inflate=-.48;if(shape==='stretch')targets.stretch=1.15;if(shape==='twist')targets.twist=1.6;if(shape==='pull'){grabPoint.set(0,.65,0);targetDelta.set(1.1,.45,.2);targets.grip=1}const simulation={inflate:{position:.8,energy:.95,motion:.35},compress:{position:.15,energy:.08,motion:.2},stretch:{position:.62,energy:.65,motion:.6},twist:{position:.22,energy:.72,motion:.9},pull:{position:.92,energy:.5,motion:.55}}[shape];field.feed(simulation,performance.now(),true);field.trigger(performance.now());poseLabel(shapes[shape].title,fromDemo?'自动演示 · 模拟输入':'模拟输入 · 未使用摄像头');if(!fromDemo)status('模拟手势效果，未使用摄像头。');updateControls()}
+function selectMode(mode){state.mouseTool='rotate';if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio';sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
+function selectMouseTool(tool) {
+ selectMode('manual');
+ state.mouseTool = tool;
+ if (tool !== 'rotate') {
+  setPaused(false);
+  describeShape(tool);
+  targetAxis.set(1, 0, 0);
+ }
+ updateControls();
+}
+function simulate(shape){describeShape(shape);clearTargets();targetAxis.set(1,0,0);if(shape==='inflate')targets.inflate=.85;if(shape==='compress')targets.inflate=-.48;if(shape==='stretch')targets.stretch=1.15;if(shape==='twist')targets.twist=1.6;if(shape==='pull'){grabPoint.set(0,.65,0);targetDelta.set(1.1,.45,.2);targets.grip=1}const simulation={inflate:{position:.8,energy:.95,motion:.35},compress:{position:.15,energy:.08,motion:.2},stretch:{position:.62,energy:.65,motion:.6},twist:{position:.22,energy:.72,motion:.9},pull:{position:.92,energy:.5,motion:.55}}[shape];field.feed(simulation,performance.now(),true);field.trigger(performance.now());poseLabel(shapes[shape].title,'自动演示 · 模拟输入');updateControls()}
 function release(announce=true){state.demo=false;clearTargets();poseLabel('松手 · 等待下一次决定',sensors.kind?'实时输入仍开启':'模拟输入');if(announce)toast(sensors.kind?'已释放；下一个实时动作会继续控制模型':'松手，让形体恢复');updateControls()}
 function emitPulse(announce=false){if(state.frozen)return;pulseAge=0;trace=1;particleBurst=1;field.trigger(performance.now());if(announce)toast('波纹正在穿过表面')}
 function setLook(name){state.look=LOOKS[name]?name:'acid';const look=LOOKS[state.look];uniforms.uArtMix.value=state.look==='quiet'?0:1;uniforms.uPigmentA.value.set(look.colors[0]);uniforms.uPigmentB.value.set(look.colors[1]);uniforms.uPigmentC.value.set(look.colors[2]);gallery.setColors(look.colors[0],look.colors[1]);all('[data-look]').forEach(b=>{const active=b.dataset.look===state.look;b.setAttribute('aria-pressed',String(active));b.classList.toggle('selected',active)});}
@@ -161,7 +171,7 @@ $('restoreRoutes').onclick=()=>{routes=defaultRoutes();renderRoutes();toast('已
 $('roomColor').onchange=e=>state.roomColor=e.target.checked;
 for(const id of ['reactivity','memory'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};
 function palette(name){state.palette=name;const p={mint:{body:'#999999',roughness:.36,metalness:.72,env:1.1},violet:{body:'#777777',roughness:.64,metalness:0,env:.24},amber:{body:'#ae7660',roughness:.83,metalness:0,env:.4}}[name];material.color.set(p.body);material.roughness=p.roughness;material.metalness=p.metalness;material.envMapIntensity=p.env;all('[data-palette]').forEach(b=>{const selected=b.dataset.palette===name;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected))})}
-all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>simulate(b.dataset.shape));all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
+all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>selectMouseTool(b.dataset.shape));all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
 $('sensorStart').onclick=async()=>{state.demo=false;setPaused(false);const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
 $('sensorStop').onclick=()=>{sensors.stop();release(false);tracked=false;poseFilter.reset();calibration=null;poseLabel('松手 · 缓慢回弹','设备已关闭');status('输入已关闭，模型将回弹。可以继续模拟动作。');syncSensorUI()};
 $('release').onclick=()=>{particleAmount=0;particleHold=false;particleBurst=0;$('particleRange').value=0;release()};
@@ -275,23 +285,68 @@ renderer.domElement.setAttribute('aria-label', '互动雕塑');
 let press=null;
 renderer.domElement.onpointerdown=e=>{
  if(!e.isPrimary||e.button!==0||press)return;
- press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,shiftKey:e.shiftKey,at:performance.now(),moved:false};
+ press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,at:performance.now(),moved:false};
  renderer.domElement.setPointerCapture(e.pointerId);
 };
-function beginDrag(e){
- stopOpening();
- if(voice.waiting)voice.resume();
- if(sensors.kind||sensors.starting||state.mode!=='manual')selectMode('manual');state.demo=false;particleHold=false;lastPointerMotion=performance.now();drag=true;dragPull=state.shape==='pull'||e.shiftKey;px=e.clientX;py=e.clientY;if(dragPull){clearTargets();describeShape('pull');grabPoint.set(0,clamp((.5-e.clientY/innerHeight)*5,-1.6,1.6),0);targetDelta.set(0,0,0);targets.grip=1;mouseOrigin={x:e.clientX,y:e.clientY};poseLabel('拖动 · 局部牵引','鼠标输入')}pointerResponse(e);field.trigger(performance.now());updateControls()};
-renderer.domElement.onpointermove=e=>{if(press&&e.pointerId!==press.id)return;
- if(press&&!drag&&Math.hypot(e.clientX-press.clientX,e.clientY-press.clientY)>6){press.moved=true;if(!state.frozen)beginDrag(press)}
- if(state.mode==='manual'&&!state.demo&&!state.frozen)pointerResponse(e);if(!drag||state.frozen)return;particleHold=false;lastPointerMotion=performance.now();if(dragPull){targetDelta.set(clamp((e.clientX-mouseOrigin.x)/innerWidth*7,-1.6,1.6),clamp((mouseOrigin.y-e.clientY)/innerHeight*5,-1.6,1.6),.15)}else if(e.altKey){state.rotation+=(e.clientX-px)*.008;state.roll=clamp(state.roll+(e.clientY-py)*.002,-.4,.4)}else{const dx=(e.clientX-px)/innerWidth*8,dy=(py-e.clientY)/innerHeight*7;if(state.shape==='inflate')targets.inflate=clamp(targets.inflate+dy,-.45,1.1);if(state.shape==='compress')targets.inflate=clamp(targets.inflate-Math.abs(dy)-Math.abs(dx)*.5,-.6,0);if(state.shape==='stretch')targets.stretch=clamp(targets.stretch+dx,-.5,1.6);if(state.shape==='twist')targets.twist=clamp(targets.twist+dx*2,-2.2,2.2)}px=e.clientX;py=e.clientY};
+function beginDrag(e) {
+ if (!state.frozen) stopOpening();
+ if (voice.waiting) voice.resume();
+ if (state.mode !== 'manual' || state.demo) selectMode('manual');
+ drag = true;
+ dragPull = state.mouseTool === 'pull';
+ particleHold = false;
+ lastPointerMotion = performance.now();
+ px = e.clientX;
+ py = e.clientY;
+ if (dragPull) {
+  clearTargets();
+  grabPoint.set(0, clamp((.5 - py / innerHeight) * 5, -1.6, 1.6), 0);
+  targetDelta.set(0, 0, 0);
+  targets.grip = 1;
+  mouseOrigin = {x: px, y: py};
+ }
+ pointerResponse(e);
+ field.trigger(performance.now());
+}
+renderer.domElement.onpointermove = e => {
+ if (press && e.pointerId !== press.id) return;
+ if (press && Math.hypot(e.clientX - press.clientX, e.clientY - press.clientY) > 6) {
+  press.moved = true;
+  if (!drag && (!state.frozen || state.mouseTool === 'rotate')) beginDrag(press);
+ }
+ if (state.mode === 'manual' && !state.demo && !state.frozen) pointerResponse(e);
+ if (!drag) return;
+ const dx = e.clientX - px, dy = e.clientY - py;
+ px = e.clientX;
+ py = e.clientY;
+ particleHold = false;
+ lastPointerMotion = performance.now();
+ if (state.mouseTool === 'rotate' || e.altKey) {
+  state.rotation += dx * .008;
+  state.pitch = clamp(state.pitch + dy * .007, -Math.PI * .48, Math.PI * .48);
+  if (state.frozen) root.rotation.set(state.pitch, state.rotation, state.roll);
+  return;
+ }
+ if (state.frozen) return;
+ const across = dx * 8 / innerWidth, up = -dy * 7 / innerHeight;
+ switch (state.mouseTool) {
+  case 'inflate': targets.inflate = clamp(targets.inflate + up, -.45, 1.1); break;
+  case 'compress': targets.inflate = clamp(targets.inflate - Math.abs(up) - Math.abs(across) * .5, -.6, 0); break;
+  case 'stretch': targets.stretch = clamp(targets.stretch + across, -.5, 1.6); break;
+  case 'twist': targets.twist = clamp(targets.twist + across * 2, -2.2, 2.2); break;
+  case 'pull':
+   targetDelta.set(clamp((px - mouseOrigin.x) * 7 / innerWidth, -1.6, 1.6),
+    clamp((mouseOrigin.y - py) * 5 / innerHeight, -1.6, 1.6), .15);
+   break;
+ }
+};
 renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!press||e.pointerId!==press.id)return;
  const tap=e.type==='pointerup'&&!drag&&!press.moved&&performance.now()-press.at<650;
  press=null;
- if(!drag){if(tap)togglePause();return;}if(drag&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
+ if(!drag){if(tap)togglePause();return;}if(state.mouseTool!=='rotate'&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
 renderer.domElement.onpointerleave=()=>{if(!drag&&state.mode==='manual'&&!state.demo)field.clear()};
 renderer.domElement.ondblclick=()=>emitPulse(true);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
-addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)simulate(Object.keys(shapes)[Number(e.key)-1])});
+addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)selectMouseTool(Object.keys(shapes)[Number(e.key)-1])});
 const canvas=$('skeleton'),ctx=canvas.getContext('2d');
 function drawHands(hands){ctx.clearRect(0,0,640,480);for(const [j,hand] of hands.entries()){ctx.strokeStyle=j?'#d6cbb5':'#d6e2c7';ctx.lineWidth=2;for(const chain of [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]]){ctx.beginPath();chain.forEach((i,k)=>{const p=hand[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}ctx.fillStyle='#fff';for(const p of hand){ctx.beginPath();ctx.arc(p.x*640,p.y*480,2.5,0,Math.PI*2);ctx.fill()}}}
 function drawEyes(points){ctx.clearRect(0,0,640,480);ctx.strokeStyle='#d6e2c7';ctx.lineWidth=2;for(const indexes of [[33,160,158,133,153,144,33],[362,385,387,263,373,380,362]]){ctx.beginPath();indexes.forEach((i,k)=>{const p=points[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}for(const i of [468,473]){const p=points[i];if(p){ctx.beginPath();ctx.arc(p.x*640,p.y*480,4,0,Math.PI*2);ctx.stroke()}}}
@@ -330,15 +385,15 @@ loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,mater
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
 function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now-lastTime)/1000:0,dt=Math.min(elapsed,.1);lastTime=now;sensorTick(now);
  if(!state.frozen){stepOpening(openingPending?0:elapsed);if(state.motion||state.demo)phase+=dt*state.speed;
-  if(state.demo){demoTime+=dt*state.speed;const stage=Math.floor(demoTime/4.8)%6;if(stage!==demoStep){demoStep=stage;if(stage<5)simulate(Object.keys(shapes)[stage],true);else{clearTargets();poseLabel('松手 · 缓慢回弹','自动演示 · 模拟输入')}}if(stage===2)targetAxis.set(Math.cos(demoTime*.12),Math.sin(demoTime*.12),0);if(stage===4)targetDelta.set(.8+Math.sin(demoTime)*.3,.35,.2);if(stage<5)field.feed({position:.5+Math.sin(demoTime*.4)*.4,energy:.5+Math.sin(demoTime*.65)*.45,motion:.3+Math.sin(demoTime*.7)*.2},now,true)}
+  if(state.demo){demoTime+=dt*state.speed;const stage=Math.floor(demoTime/4.8)%6;if(stage!==demoStep){demoStep=stage;if(stage<5)simulate(Object.keys(shapes)[stage]);else{clearTargets();poseLabel('松手 · 缓慢回弹','自动演示 · 模拟输入')}}if(stage===2)targetAxis.set(Math.cos(demoTime*.12),Math.sin(demoTime*.12),0);if(stage===4)targetDelta.set(.8+Math.sin(demoTime)*.3,.35,.2);if(stage<5)field.feed({position:.5+Math.sin(demoTime*.4)*.4,energy:.5+Math.sin(demoTime*.65)*.45,motion:.3+Math.sin(demoTime*.7)*.2},now,true)}
   let energy=0;for(const k in current){let goal=targets[k]*(k==='grip'?1:state.spread)*(1-conformity);[current[k],velocity[k]]=springStep(current[k],velocity[k],goal,dt,state.elastic);energy+=Math.abs(current[k])*.3;trace=Math.max(trace,Math.min(1,Math.abs(velocity[k])*.12))}
   trace*=Math.exp(-dt*(state.elastic?.65:3));pulseAge+=dt;
   uniforms.uTraceAmount.value=1-conformity;uniforms.uInflate.value=current.inflate;uniforms.uStretch.value=current.stretch;uniforms.uTwist.value=current.twist;uniforms.uGrip.value=current.grip*state.spread;uniforms.uScatter.value=0;uniforms.uPulse.value=pulseAge;uniforms.uAxis.value.lerp(targetAxis,1-Math.exp(-dt*8)).normalize();uniforms.uGrab.value.copy(grabPoint);smoothDelta.lerp(targetDelta,1-Math.exp(-dt*10));uniforms.uDelta.value.copy(smoothDelta);
-  root.rotation.y=blend(root.rotation.y,state.rotation,dt,7);root.rotation.z=blend(root.rotation.z,state.roll,dt,7);const size=blend(root.scale.x,state.scale,dt);root.scale.setScalar(size);
+  root.rotation.x=blend(root.rotation.x,state.pitch,dt,7);root.rotation.y=blend(root.rotation.y,state.rotation,dt,7);root.rotation.z=blend(root.rotation.z,state.roll,dt,7);const size=blend(root.scale.x,state.scale,dt);root.scale.setScalar(size);
   updateAppearance(dt,now);
   particleBurst=Math.max(0,particleBurst-dt*.6);
   if(press&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
-  particleHold=drag&&!dragPull&&now-lastPointerMotion>650;
+  particleHold=drag&&!dragPull&&(state.mouseTool!=='rotate'||!press?.moved)&&now-lastPointerMotion>650;
   const live=sensors.kind==='hand'&&tracked?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
   particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),state.look==='quiet'?['#454545','#999999']:LOOKS[state.look].colors,openingActive);
   if (ready && voice.active) {
