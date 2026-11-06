@@ -6,7 +6,7 @@ import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
 import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbody.mjs?v=agency-final';
-import {createGallery} from './gallery.mjs?v=reflect-v7.10';
+import {createGallery} from './gallery.mjs?v=frontlight-v7.11';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
 const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
