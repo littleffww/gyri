@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.16](https://github.com/littleffww/gyri/tree/codex/gyri-v7.16-2026-11-06) | 2026-11-06 | Gentle self-rotation during the voiced opening, with manual control while dragging. |
 | [Gyri v7.15](https://github.com/littleffww/gyri/tree/codex/gyri-v7.15-2026-11-06) | 2026-11-06 | Gentle language fades, speaker feedback and transitions for buttons and settings. |
 | [Gyri v7.14](https://github.com/littleffww/gyri/tree/codex/gyri-v7.14-2026-11-06) | 2026-11-06 | Rotate through the entire voiced opening. A tap offers playback choices while the sequence continues. |
 | [Gyri v7.13](https://github.com/littleffww/gyri/tree/codex/gyri-v7.13-2026-11-06) | 2026-11-06 | Drag to rotate by default. Select a shaping tool to deform, or choose Rotate to inspect the result. |
