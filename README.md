@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.1-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7.1-2026-11-06) | 2026-11-06 | Adds a one-time, ten-second opening dissolve from 0 to 100%; visitors can take over immediately. |
 | [Gyri v7](https://github.com/littleffww/gyri/tree/codex/gyri-v7-public-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7-public-2026-11-06) | 2026-11-06 | Full preserved project snapshot; exact v7 website assets, with public hosting documentation. |
 
 Snapshot branches and annotated tags are fixed archives. Development continues on `codex/gyri-development`; `gh-pages` contains the published static files.
@@ -18,6 +19,8 @@ The original Rhino file is not included. Run `python3 serve.py` to preview local
 An AcrossRCA interaction study about retaining authorship while talking with AI. The work makes influence visible, adjustable and reversible. This is an artistic proposal based on the user's theme, not a statement of an official course requirement. It uses authored rules and local gesture recognition; no conversational AI is connected, and it does not assess emotions or authenticity.
 
 ## Current experience
+
+After the model loads, the opening demonstration slowly increases dispersion from 0 to 100% over ten visible seconds. It runs once per page load, pauses while the page is hidden, and stops immediately on interaction. Completion provides a short next-step hint in Chinese, Japanese and English. Reduced-motion preferences skip the automatic demonstration.
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 

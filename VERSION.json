@@ -1,12 +1,12 @@
 {
-  "name": "Gyri v7",
+  "name": "Gyri v7.1",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
   "source_commit": "638a2107e19576b00d83efca5169f80bf094ea65",
   "site_version": 7,
   "site_version_id": "appgprj_6aebcc4425f08191bdebfd5509e39808~appgver_f5c8fce15a888191be280eb59938fb09",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7-public-2026-11-06",
-  "snapshot_tag": "gyri-v7-public-2026-11-06",
-  "note": "Exact v7 website assets, unchanged. Public hosting documentation and local launchers included."
+  "snapshot_branch": "codex/gyri-v7.1-2026-11-06",
+  "snapshot_tag": "gyri-v7.1-2026-11-06",
+  "note": "Based on preserved v7; adds an interruptible ten-second opening dissolve and localized guidance."
 }
