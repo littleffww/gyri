@@ -21,7 +21,7 @@ header{position:fixed;left:40px;right:40px;top:28px;height:38px;display:flex;ali
 .intro{position:fixed;left:42px;top:135px;pointer-events:none}
 .edition{font-size:11px;letter-spacing:.8px;color:#7b7e74;margin:0 0 20px}
 .intro h1{font-size:31px;letter-spacing:2px;font-weight:400;margin:0 0 16px;line-height:1.3}
-.intro>p:last-child{margin:0;color:#74776f;font-size:12px;letter-spacing:.3px}
+.intro>p:first-of-type{margin:0;color:#74776f;font-size:12px;letter-spacing:.3px}
 .work-caption{position:fixed;left:42px;bottom:133px;width:210px;pointer-events:none}
 .mode-story>span{color:#8a8b83;font-size:10px;letter-spacing:1.4px}
 .mode-story h2{font-size:16px;line-height:1.7;font-weight:400;letter-spacing:.5px;margin:10px 0}
@@ -123,7 +123,7 @@ dialog a{display:block;font-size:10px;text-decoration:underline;text-underline-o
 .intro,.work-caption{left:28px}
 .panel{right:27px;width:216px}
 .intro h1{font-size:26px}
-.intro>p:last-child{font-size:11px}
+.intro>p:first-of-type{font-size:11px}
 .work-caption{width:185px}
 .tabs{gap:19px}
 .shape-dock{left:47%;bottom:55px}
@@ -142,7 +142,7 @@ dialog a{display:block;font-size:10px;text-decoration:underline;text-underline-o
 .intro{left:22px;top:87px}
 .edition{font-size:9px;margin-bottom:11px}
 .intro h1{font-size:24px;letter-spacing:1px;margin-bottom:10px}
-.intro>p:last-child{font-size:10px}
+.intro>p:first-of-type{font-size:10px}
 .work-caption{left:22px;top:192px;bottom:auto;width:140px}
 .mode-story>span{font-size:8px;letter-spacing:.5px}
 .mode-story h2{font-size:11px;margin:9px 0}
@@ -201,7 +201,7 @@ body{background:#f7f7f7;color:var(--ink)}
 .panel,.dock-buttons,.actions button,.look-options button,.look-options button.selected,.forms button,.forms button[aria-pressed=true],.palettes button,.palettes button.selected,.dock-buttons button,.dock-buttons button.selected,.dock-buttons button:hover{background:none;border-radius:0;box-shadow:none;backdrop-filter:none}
 .panel{padding:0 3px 18px 0;border:0;scrollbar-color:#b7b7b7 transparent;width:254px;top:125px;bottom:100px}
 .paneltop h2{font-size:13px}.paneltop{margin-bottom:17px}.panel .small{color:#737373;line-height:1.9}
-.brand span,.header-actions button,.edition,.intro>p:last-child,.mode-story>span,.mode-story p,.gesture-readout>span,.gesture-readout strong,.paneltop>span,.tabs button,.instructions p,.instructions b,#status,output,summary,.setting-title,.palettes button,.check,.privacy,.small,.dock-label,.dock-buttons button,.simulation-note,.scene-label,.look-options button,.look-caption,.look-caption span,.section-label>span,.route-heading select,.text-button{color:#666}
+.brand span,.header-actions button,.edition,.intro>p:first-of-type,.mode-story>span,.mode-story p,.gesture-readout>span,.gesture-readout strong,.paneltop>span,.tabs button,.instructions p,.instructions b,#status,output,summary,.setting-title,.palettes button,.check,.privacy,.small,.dock-label,.dock-buttons button,.simulation-note,.scene-label,.look-options button,.look-caption,.look-caption span,.section-label>span,.route-heading select,.text-button{color:#666}
 .tabs button.active,.tabs button:hover,.dock-buttons button.selected,.dock-buttons button:hover,.forms button[aria-pressed=true],.look-options button.selected,.header-actions button:hover{color:#111}
 .tabs button.active:after{height:1px;background:#111}
 input[type=checkbox]{accent-color:#222}
@@ -218,7 +218,7 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{o
 .material-options,.mapping{border-bottom:1px solid var(--line);border-top:0;margin-top:0}.panel .appearance{border-top:0}.looks{margin:0 0 15px}.look-options i,.palettes i{filter:grayscale(1)}.look-options button.selected{border-color:transparent;border-bottom-color:#222}.route-heading select{background:none;border-radius:0}
 .dock-buttons{border:0;gap:19px;padding:0}.dock-buttons button{width:57px;border-bottom:1px solid transparent}.dock-buttons button.selected{border-bottom-color:#333}.shape-dock{gap:8px;bottom:45px}
 .languages{display:flex;align-items:center;gap:8px;white-space:nowrap}.languages span{font-size:10px;color:#bbb}.languages button{color:#999;font-size:11px;min-width:24px;position:relative}.languages button[aria-pressed=true]{color:#111}.languages button:after{content:'';height:1px;position:absolute;left:5px;right:5px;bottom:3px;background:#111}
-.intro{top:132px}.intro h1{font-size:34px;font-weight:350;letter-spacing:3px;max-width:240px}.intro>p:last-child{max-width:220px;line-height:1.9}.work-caption{bottom:150px}.edition{letter-spacing:1px;font-size:10px}.look-caption{display:none}.gesture-readout{border:0;padding-top:0}
+.intro{top:132px}.intro h1{font-size:34px;font-weight:350;letter-spacing:3px;max-width:240px}.intro>p:first-of-type{max-width:220px;line-height:1.9}.work-caption{bottom:150px}.edition{letter-spacing:1px;font-size:10px}.look-caption{display:none}.gesture-readout{border:0;padding-top:0}
 #toast {
   background: none;
   border: 0;
@@ -234,14 +234,14 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{o
   pointer-events: none;
 }
 dialog{border:0;border-radius:0;background:#f7f7f7;color:#333;box-shadow:none;width:min(590px,calc(100vw - 40px));padding:45px}dialog::backdrop{background:#ffffffb3;backdrop-filter:blur(8px)}#conceptClose{color:#444}
-@media(max-width:1100px) and (min-width:761px){.panel{right:25px;width:220px}.intro h1{font-size:28px}.intro>p:last-child{max-width:190px}.dock-buttons{gap:7px}.work-caption{width:180px}}
-@media(max-width:760px){header{left:20px;right:20px}.header-actions{gap:14px}.header-actions button{font-size:10px}.languages{gap:3px}.languages button{min-width:20px}.intro{top:87px;left:22px}.intro h1{font-size:25px;margin-bottom:7px;max-width:200px}.intro>p:last-child{font-size:10px;max-width:220px}.work-caption{top:187px;width:145px}.panel{top:auto;left:22px;right:22px;bottom:86px;width:auto;max-height:29dvh;padding:0 4px 8px 0;background:none;border:0;backdrop-filter:none}.paneltop{margin-bottom:12px}.dock-buttons{gap:13px}.dock-buttons button{width:48px}.shape-dock{bottom:16px}.agency{padding-top:10px}.brand span{display:none}html[lang=en] .intro h1{font-size:24px}html[lang=en] .work-caption{width:165px}.languages button{padding:8px 0}dialog{padding:35px 27px}}
+@media(max-width:1100px) and (min-width:761px){.panel{right:25px;width:220px}.intro h1{font-size:28px}.intro>p:first-of-type{max-width:190px}.dock-buttons{gap:7px}.work-caption{width:180px}}
+@media(max-width:760px){header{left:20px;right:20px}.header-actions{gap:14px}.header-actions button{font-size:10px}.languages{gap:3px}.languages button{min-width:20px}.intro{top:87px;left:22px}.intro h1{font-size:25px;margin-bottom:7px;max-width:200px}.intro>p:first-of-type{font-size:10px;max-width:220px}.work-caption{top:187px;width:145px}.panel{top:auto;left:22px;right:22px;bottom:86px;width:auto;max-height:29dvh;padding:0 4px 8px 0;background:none;border:0;backdrop-filter:none}.paneltop{margin-bottom:12px}.dock-buttons{gap:13px}.dock-buttons button{width:48px}.shape-dock{bottom:16px}.agency{padding-top:10px}.brand span{display:none}html[lang=en] .intro h1{font-size:24px}html[lang=en] .work-caption{width:165px}.languages button{padding:8px 0}dialog{padding:35px 27px}}
 
 html[lang=ja] .intro h1{font-size:28px;letter-spacing:1px;max-width:280px}
 @media(max-width:760px){html[lang=ja] .intro h1{font-size:23px;max-width:230px}}
 
 .intro {max-width: min(24vw, 270px)}
-.intro > p:last-child {max-width: none}
+.intro > p:first-of-type {max-width: none}
 p.instructions {margin: 0; line-height: 1.8; color: #555}
 #status:empty {display: none}
 details.agency {padding: 0; border-top: 0; border-bottom: 1px solid var(--line)}
@@ -277,30 +277,30 @@ html:lang(zh) :is(.intro h1, dialog h2) {
   font-weight: 350;
   letter-spacing: .015em;
 }
-html:lang(en) :is(.intro h1, dialog h2) {
+html:lang(en) :is(.intro h1, dialog h2), dialog:lang(en) h2 {
   font-size: clamp(28px, 3vw, 42px);
   font-weight: 300;
   letter-spacing: -.035em;
   line-height: 1.15;
 }
-.intro > p:last-child, dialog p {
+.intro > p:first-of-type, dialog p {
   font-weight: 350;
   letter-spacing: .015em;
   line-height: 1.85;
 }
-html:lang(en) :is(.intro > p:last-child, dialog p) {
+html:lang(en) :is(.intro > p:first-of-type, dialog p), dialog:lang(en) p {
   font-weight: 300;
   letter-spacing: .005em;
   line-height: 1.5;
 }
-html:lang(en) .intro > p:last-child { font-size: 15px; }
+html:lang(en) .intro > p:first-of-type { font-size: 15px; }
 html:lang(en) :is(.forms button, .dock-buttons span, .panel label, .panel output, .header-actions button) {
   font-size: 12px;
 }
 html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-size: 13px; }
 @media (max-width: 760px) {
   html:lang(en) .intro h1 { font-size: 27px; }
-  html:lang(en) .intro > p:last-child { font-size: 13px; }
+  html:lang(en) .intro > p:first-of-type { font-size: 13px; }
 }
 
 .voice-switch {
@@ -410,3 +410,9 @@ button, summary {
  }
  #audioControls, #eyeControls { transition: opacity 180ms ease-out; }
 }
+
+.intro p.model-credit, #concept .team-credit {
+ color: #666; font-size: 11px; line-height: 1.6; font-weight: 400;
+}
+.intro p.model-credit { margin-top: .85em; }
+#concept .team-credit { margin-top: 1.4em; margin-bottom: 0; }
