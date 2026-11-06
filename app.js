@@ -24,6 +24,8 @@ const openingHoldSeconds = 2;
 let openingPending = state.motion;
 let openingActive = false;
 let openingElapsed = 0;
+const openingTurnRate = THREE.MathUtils.degToRad(2.25);
+let freeTurnTime = 0;
 let sculpture=null,baseMesh=null,ready=false,phase=0,pulseAge=99,lastTime=0,lastUI=0,trace=0,tracked=false,calibration=null,gazeZero=null,toastTimer,pullOrigin=null,previousRaw=null,demoStep=-1,demoTime=0;
 const shapes={
  inflate:{number:'01 / INFLATE',title:'张掌 · 让表面鼓起',description:'板片向外鼓胀，体积变得饱满。<br>每个部件本身都在变形。'},
@@ -107,6 +109,16 @@ function stepOpening(dt) {
  openingElapsed += dt;
  const gatherStart = openingLegSeconds + openingHoldSeconds;
  const duration = gatherStart + openingLegSeconds;
+ // Add to the angle chosen by the viewer so releasing a drag never snaps the view back.
+ if (press) {
+  freeTurnTime = 0;
+ } else {
+  const turnDt = Math.min(dt, .1);
+  freeTurnTime += turnDt;
+  const easeIn = THREE.MathUtils.smoothstep(freeTurnTime, 0, 1.1);
+  const easeOut = THREE.MathUtils.smoothstep(duration - openingElapsed, 0, 1.5);
+  state.rotation += openingTurnRate * easeIn * easeOut * turnDt;
+ }
  const progress = clamp(Math.min(openingElapsed, duration - openingElapsed) / openingLegSeconds, 0, 1);
  // Ease into the fully scattered pose, hold it, then retrace the same curve.
  particleAmount = progress * progress * (3 - 2 * progress);
@@ -312,6 +324,7 @@ renderer.domElement.setAttribute('aria-label', '互动雕塑');
 let press=null;
 renderer.domElement.onpointerdown=e=>{
  if(!e.isPrimary||e.button!==0||press)return;
+ if (watchingOpening()) freeTurnTime = 0;
  press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,at:performance.now(),moved:false,opening:watchingOpening()};
  renderer.domElement.setPointerCapture(e.pointerId);
 };
