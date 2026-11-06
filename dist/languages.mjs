@@ -1,4 +1,9 @@
 const rows=`
+开启作品人声|Enable sculpture voice|作品の声をオン
+关闭作品人声|Mute sculpture voice|作品の声をオフ
+正在载入人声…|Loading voice…|声を読み込み中…
+人声载入失败，点击可重试。|Could not load the voice. Click to try again.|声を読み込めませんでした。もう一度押してください。
+雕塑聚合时，人声听起来更近。你让形体膨胀或散开，回声也随之展开。停下后，声音慢慢消退。|As the sculpture gathers, the voice draws closer. Inflate or scatter the form and its reverberation opens out. When you stop, the sound fades.|彫刻が集まると、人の声が近づきます。形が膨らんだり散ったりすると残響が広がり、動きを止めると声は静かに消えていきます。
 当 AI 给出建议，你想保留哪些自己的想法？用动作改变这件雕塑，留下你选择的形状。|When AI offers a suggestion, which ideas do you want to keep? Shape the sculpture with a gesture and keep the form you choose.|AIが提案するとき、自分のどんな考えを残したいですか。動きで彫刻を変え、自分が選んだ形を残してください。
 Gyri 探索人在与 AI 共同创作时如何保留自己的判断。拖动或张开手掌，原本整齐的折片会偏移。点击「留下此刻」，刚才那个动作就有了形状。|Gyri explores how we keep our own judgment when creating with AI. Drag or open your palm to shift the folds. Select “Keep this moment” to preserve the shape of that gesture.|Gyriは、AIと共に制作する中で自分の判断をどう保つかを探る作品です。ドラッグしたり手のひらを開いたりすると、折り目が動きます。「この瞬間を残す」を押すと、その動きが形として残ります。
 「接受系统建议」会把雕塑推回预设的原形。试着把滑块往回拉，看看刚才留下的痕迹。你可以在两个形状之间停下。|“Accept the suggestion” draws the sculpture back towards its preset form. Slide it back to see the trace you left. You can stop anywhere between those two forms.|「システムの提案を受け入れる」を動かすと、彫刻は元の形に近づきます。スライダーを戻して、自分の動きの痕跡を見てください。二つの形の間で、好きなところに止められます。
