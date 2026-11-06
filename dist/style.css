@@ -1,4 +1,4 @@
-:root{color-scheme:light;--ink:#32332f;--muted:#777971;--line:rgba(63,64,55,.15);--paper:#f4f3ef;--accent:#555b50;font-family:-apple-system,BlinkMacSystemFont,"Helvetica Neue","PingFang SC","Microsoft YaHei",sans-serif;font-synthesis:none;font-weight:400;color:var(--ink)}
+:root{color-scheme:light;--ink:#32332f;--muted:#777971;--line:rgba(63,64,55,.15);--paper:#f4f3ef;--accent:#555b50;font-family:var(--body-type);font-synthesis:none;font-weight:400;color:var(--ink)}
 *{box-sizing:border-box}
 body{margin:0;overflow:hidden;background:#ecebe7;font-size:13px;-webkit-font-smoothing:antialiased}
 button,a,input,summary{-webkit-tap-highlight-color:transparent}
@@ -235,4 +235,64 @@ details.agency {padding: 0; border-top: 0; border-bottom: 1px solid var(--line)}
 details.agency[open] {padding-bottom: 12px}
 @media (max-width: 760px) {
  .intro {max-width: min(62vw, 250px)}
+}
+
+
+/* Typography from the OUSUGURUHI portfolio. */
+@font-face {
+  font-family: "Space Grotesk";
+  src: url("fonts/SpaceGrotesk.woff2") format("woff2");
+  font-weight: 300 700;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Chiron Hei HK";
+  src: url("fonts/ChironHeiHK.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+@font-face {
+  font-family: "Noto Serif TC";
+  src: url("fonts/NotoSerifTC.woff2") format("woff2");
+  font-weight: 200 900;
+  font-display: swap;
+}
+:root {
+  --latin-type: "futura-pt", "Space Grotesk";
+  --body-type: var(--latin-type), "Chiron Hei HK", "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+html:lang(ja) {
+  --body-type: var(--latin-type), "Hiragino Kaku Gothic ProN", "Yu Gothic", sans-serif;
+}
+.brand { font-weight: 600; letter-spacing: -.035em; }
+.brand span { font-weight: 400; letter-spacing: .04em; }
+html:lang(zh) :is(.intro h1, dialog h2) {
+  font-family: var(--latin-type), "Noto Serif TC", "Songti SC", serif;
+  font-weight: 600;
+  letter-spacing: -.035em;
+}
+html:lang(en) :is(.intro h1, dialog h2) {
+  font-size: clamp(28px, 3vw, 42px);
+  font-weight: 300;
+  letter-spacing: -.035em;
+  line-height: 1.15;
+}
+.intro > p:last-child, dialog p {
+  font-weight: 350;
+  letter-spacing: .015em;
+  line-height: 1.85;
+}
+html:lang(en) :is(.intro > p:last-child, dialog p) {
+  font-weight: 300;
+  letter-spacing: .005em;
+  line-height: 1.5;
+}
+html:lang(en) .intro > p:last-child { font-size: 15px; }
+html:lang(en) :is(.forms button, .dock-buttons span, .panel label, .panel output, .header-actions button) {
+  font-size: 12px;
+}
+html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-size: 13px; }
+@media (max-width: 760px) {
+  html:lang(en) .intro h1 { font-size: 27px; }
+  html:lang(en) .intro > p:last-child { font-size: 13px; }
 }

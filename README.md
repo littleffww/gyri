@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.3](https://github.com/littleffww/gyri/tree/codex/gyri-v7.3-2026-11-06) | 2026-11-06 | Portfolio typography for Chinese and English. |
 | [Gyri v7.2](https://github.com/littleffww/gyri/tree/codex/gyri-v7.2-2026-11-06) | 2026-11-06 | Full scatter-and-gather opening, shorter controls and a trilingual project introduction. |
 | [Gyri v7.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.1-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7.1-2026-11-06) | 2026-11-06 | Adds a one-time, ten-second opening dissolve from 0 to 100%; visitors can take over immediately. |
 | [Gyri v7](https://github.com/littleffww/gyri/tree/codex/gyri-v7-public-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7-public-2026-11-06) | 2026-11-06 | Full preserved project snapshot; exact v7 website assets, with public hosting documentation. |
