@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.5.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.5.1-2026-11-06) | 2026-11-06 | Voice control also initializes on returning visitors’ cached pages. |
 | [Gyri v7.5](https://github.com/littleffww/gyri/tree/codex/gyri-v7.5-2026-11-06) | 2026-11-06 | A recorded human voice follows the sculpture’s movement, opens into reverberation and fades at rest. |
 | [Gyri v7.4](https://github.com/littleffww/gyri/tree/codex/gyri-v7.4-2026-11-06) | 2026-11-06 | Uses the same Chinese typeface for headings and body text. |
 | [Gyri v7.3](https://github.com/littleffww/gyri/tree/codex/gyri-v7.3-2026-11-06) | 2026-11-06 | Portfolio typography for Chinese and English. |
