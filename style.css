@@ -226,3 +226,13 @@ dialog{border:0;border-radius:0;background:#f7f7f7;color:#333;box-shadow:none;wi
 
 html[lang=ja] .intro h1{font-size:28px;letter-spacing:1px;max-width:280px}
 @media(max-width:760px){html[lang=ja] .intro h1{font-size:23px;max-width:230px}}
+
+.intro {max-width: min(24vw, 270px)}
+.intro > p:last-child {max-width: none}
+p.instructions {margin: 0; line-height: 1.8; color: #555}
+#status:empty {display: none}
+details.agency {padding: 0; border-top: 0; border-bottom: 1px solid var(--line)}
+details.agency[open] {padding-bottom: 12px}
+@media (max-width: 760px) {
+ .intro {max-width: min(62vw, 250px)}
+}
