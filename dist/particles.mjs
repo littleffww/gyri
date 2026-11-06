@@ -37,7 +37,12 @@ export function createParticles(geometry,root,shared=makeSoftMaterial().uniforms
  }`});
  const points=new T.Points(geo,mat);points.frustumCulled=false;points.visible=false;root.add(points);
  let form='original',s=0,migrating=false;const names=['original','sphere','helix','assembly'];
+ function setColors(colors) {
+  uniforms.tint.value.set(colors[0]);
+  uniforms.tintB.value.set(colors[1]);
+ }
  return {
+ setColors,
  reset() {
   form = 'original';
   migrating = false;
@@ -51,7 +56,7 @@ export function createParticles(geometry,root,shared=makeSoftMaterial().uniforms
   const goal=migrating?1:T.MathUtils.clamp(amount,0,1);s=opening&&!migrating?goal:s+(goal-s)*(1-Math.exp(-dt*3.2));if(Math.abs(goal-s)<.0001)s=goal;
   if(migrating&&s>.86){const wanted=names.indexOf(form),w=formWeights.toArray();let error=0;for(let k=0;k<4;k++){w[k]+=((k===wanted?1:0)-w[k])*(1-Math.exp(-dt*4));error+=Math.abs((k===wanted?1:0)-w[k])}if(error<.002){w.fill(0);w[wanted]=1;migrating=false}formWeights.fromArray(w)}
   uniforms.scatter.value=s;shared.uDissolve.value=Math.max(s,1-formWeights.x);
-  uniforms.tint.value.set(colors[0]);uniforms.tintB.value.set(colors[1]);points.visible=shared.uDissolve.value>.005;
+  setColors(colors);points.visible=shared.uDissolve.value>.005;
   return 1-shared.uDissolve.value;
  },get form(){return form},get transitioning(){return migrating},get amount(){return s}
  };

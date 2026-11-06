@@ -1,11 +1,11 @@
 {
-  "name": "Gyri v7.18",
+  "name": "Gyri v7.19",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
-  "source_commit": "e13c6991c6b8fc8886b0e10a9b28f5908851d79a",
-  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_ad7ff8ed62788191ac9b33e53891fb99",
+  "source_commit": "f5b52bd11e978ac40ecf8ff59107f44225452a36",
+  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_f2ca928e66248191924c62171507af3b",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7.18-2026-11-06",
-  "snapshot_tag": "gyri-v7.18-2026-11-06",
-  "note": "Mobile media playback route, reliable tap-to-hear and audio interruption recovery."
+  "snapshot_branch": "codex/gyri-v7.19-2026-11-06",
+  "snapshot_tag": "gyri-v7.19-2026-11-06",
+  "note": "Optional night lighting, a matching interface and a shareable night-view link."
 }
