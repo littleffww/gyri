@@ -40,7 +40,17 @@ const modes = {
 };
 function status(t){$('status').textContent=t}
 // Run once after the geometry is ready; actual input immediately takes over.
-const voice = connectVoiceButton($('voiceSwitch'), toast);
+// A cached page shell can briefly precede the audio control during a Pages rollout.
+let voiceButton = $('voiceSwitch');
+if (!voiceButton) {
+ voiceButton = document.createElement('button');
+ voiceButton.id = 'voiceSwitch';
+ voiceButton.className = 'voice-switch';
+ voiceButton.setAttribute('aria-pressed', 'false');
+ voiceButton.textContent = '开启作品人声';
+ $('instructions').before(voiceButton);
+}
+const voice = connectVoiceButton(voiceButton, toast);
 function stopOpening(event){
  if(event?.target?.closest?.('#voiceSwitch'))return;
  if(!openingPending&&!openingActive)return;
