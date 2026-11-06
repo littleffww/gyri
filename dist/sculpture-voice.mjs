@@ -96,6 +96,9 @@ export function connectVoiceButton(button, reportError) {
   let recording = null;
   let enabled = true;
   let paused = false;
+  const label = document.createElement('span');
+  button.replaceChildren(label);
+  let previousLabel;
   function waiting() {
     return enabled && !paused && !!session && session.context.state !== 'running';
   }
@@ -106,8 +109,15 @@ export function connectVoiceButton(button, reportError) {
     button.dataset.needsTap = String(needsTap);
     button.setAttribute('aria-pressed', String(audible));
     button.dataset.sound = audible ? 'on' : 'off';
-    button.textContent = !enabled ? '开启作品人声' : needsTap ? '点一下听人声' :
+    const nextLabel = !enabled ? '开启作品人声' : needsTap ? '点一下听人声' :
       audible ? '关闭作品人声' : '正在载入人声…';
+    if (previousLabel === nextLabel) return;
+    label.textContent = nextLabel;
+    if (previousLabel && label.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      label.getAnimations().forEach(animation => animation.cancel());
+      label.animate([{opacity: .4}, {opacity: 1}], {duration: 150, easing: 'ease-out'});
+    }
+    previousLabel = nextLabel;
   }
   syncButton();
   function off() {

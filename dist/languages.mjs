@@ -322,5 +322,46 @@ function tr(s){if(lang==='zh')return s;let out=s;for(const [zh,en,ja] of dict)ou
 let busy=false;function translate(){if(busy)return;busy=true;document.documentElement.lang=lang;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){if(n.parentElement?.closest('.languages'))continue;if(['SCRIPT','STYLE','OPTION'].includes(n.parentElement?.tagName)&&n.parentElement.closest('#language'))continue;if(['SCRIPT','STYLE'].includes(n.parentElement?.tagName))continue;const old=records.get(n);let source=old&&n.nodeValue===old.result?old.source:n.nodeValue;const result=tr(source);records.set(n,{source,result});if(n.nodeValue!==result)n.nodeValue=result;}for(const el of document.querySelectorAll('[aria-label],[title]')){let data=records.get(el)||{};for(const attr of ['aria-label','title']){if(!el.hasAttribute(attr))continue;const value=el.getAttribute(attr),old=data[attr],source=old&&value===old.result?old.source:value,result=tr(source);data[attr]={source,result};if(value!==result)el.setAttribute(attr,result)}records.set(el,data)}document.title=lang==='zh'?'Gyri · 由你决定':lang==='ja'?'Gyri · あなたが決める':'Gyri · Your decision';busy=false;}
 const choices=[...document.querySelectorAll('[data-lang]')];
 function syncLanguage(){for(const button of choices)button.setAttribute('aria-pressed',String(button.dataset.lang===lang));translate()}
-for(const button of choices)button.onclick=()=>{lang=button.dataset.lang;try{localStorage.setItem('gyri-language',lang)}catch{}syncLanguage()};syncLanguage();
+// Only the interface fades. The live sculpture and its audio keep their own clocks.
+const languageSurfaces = [...document.querySelectorAll(
+ '.brand span, .header-actions > button, .intro, .panel, .shape-dock, #openingChoice, #concept > p, #concept h2'
+)];
+const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
+let requestedLanguage = lang;
+let changeNumber = 0;
+let fades = [];
+
+async function changeLanguage(next) {
+ if (next === requestedLanguage) return;
+ requestedLanguage = next;
+ const change = ++changeNumber;
+ const surfaces = languageSurfaces.filter(el => el.getClientRects().length);
+ const opacity = surfaces.map(el => getComputedStyle(el).opacity);
+ fades.forEach(animation => animation.cancel());
+ fades = [];
+ for (const button of choices) button.setAttribute('aria-pressed', String(button.dataset.lang === next));
+
+ const animate = !motionPreference.matches && typeof Element.prototype.animate === 'function';
+ if (animate) {
+  fades = surfaces.map((el, i) => el.animate([{opacity: opacity[i]}, {opacity: 0}], {
+   duration: 105, easing: 'ease-in', fill: 'forwards'
+  }));
+  await Promise.allSettled(fades.map(animation => animation.finished));
+  if (change !== changeNumber) return;
+ }
+ lang = next;
+ try { localStorage.setItem('gyri-language', lang); } catch {}
+ syncLanguage();
+ fades.forEach(animation => animation.cancel());
+ fades = [];
+ if (animate && !motionPreference.matches) {
+  fades = surfaces.map(el => el.animate([{opacity: 0}, {opacity: getComputedStyle(el).opacity}], {
+   duration: 185, easing: 'ease-out'
+  }));
+  await Promise.allSettled(fades.map(animation => animation.finished));
+  if (change === changeNumber) fades = [];
+ }
+}
+for (const button of choices) button.onclick = () => changeLanguage(button.dataset.lang);
+syncLanguage();
 new MutationObserver(()=>{if(!busy)queueMicrotask(translate)}).observe(document.body,{childList:true,subtree:true,characterData:true});translate();

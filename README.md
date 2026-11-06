@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.15](https://github.com/littleffww/gyri/tree/codex/gyri-v7.15-2026-11-06) | 2026-11-06 | Gentle language fades, speaker feedback and transitions for buttons and settings. |
 | [Gyri v7.14](https://github.com/littleffww/gyri/tree/codex/gyri-v7.14-2026-11-06) | 2026-11-06 | Rotate through the entire voiced opening. A tap offers playback choices while the sequence continues. |
 | [Gyri v7.13](https://github.com/littleffww/gyri/tree/codex/gyri-v7.13-2026-11-06) | 2026-11-06 | Drag to rotate by default. Select a shaping tool to deform, or choose Rotate to inspect the result. |
 | [Gyri v7.12](https://github.com/littleffww/gyri/tree/codex/gyri-v7.12-2026-11-06) | 2026-11-06 | Restores the angled studio lighting, centers softer feedback above the sculpture and puts one-click restoration beside Gather. |
