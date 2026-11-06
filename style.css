@@ -416,3 +416,36 @@ button, summary {
 }
 .intro p.model-credit { margin-top: .85em; }
 #concept .team-credit { margin-top: 1.4em; margin-bottom: 0; }
+
+#nightView { display: inline-flex; align-items: center; justify-content: center; gap: .4em; min-height: 36px; }
+#nightView[aria-pressed=true] svg { fill: currentColor; }
+@media (max-width: 760px) {
+ #nightView span { display: none; }
+ #nightView { min-width: 24px; }
+ .header-actions { gap: clamp(5px, 2vw, 12px); }
+}
+@media (max-width: 380px) {
+ header { left: 12px; right: 12px; }
+ .languages { gap: 1px; }
+}
+html[data-view=night] {
+ color-scheme: dark;
+ --paper: #17191c; --ink: #e7e7e3; --muted: #bcbfbe; --line: #46494c; --accent: #e7e7e3;
+}
+html[data-view=night] body { background: var(--paper); color: var(--ink); }
+html[data-view=night] :is(header, .panel, .shape-dock, .intro, #concept, #openingChoice, #toast)
+ :is(button, p, small, summary, label, output, select, span, strong, .edition) { color: var(--muted); }
+html[data-view=night] :is(.brand, h1, h2, #conceptClose, #nightView[aria-pressed=true], .tabs button.active,
+ .dock-buttons button.selected, .dock-buttons button.selected span, button[aria-pressed=true], button:enabled:hover) { color: var(--ink); }
+html[data-view=night] :is(#concept .team-credit, #status, #openingChoice, #toast) { color: var(--muted); }
+html[data-view=night] .panel { scrollbar-color: #595c60 transparent; }
+html[data-view=night] :is(.tabs button.active, .languages button)::after { background: var(--ink); }
+html[data-view=night] :is(.selected, .primary, .secondary) { border-bottom-color: var(--muted); }
+html[data-view=night] :is(select, option, #concept) { background-color: #202226; color: var(--ink); }
+html[data-view=night] #concept::backdrop { background: rgb(12 14 17 / .78); }
+html[data-view=night] input { accent-color: var(--ink); }
+html[data-view=night] input[type=range]::-webkit-slider-runnable-track { background: #767a80; }
+html[data-view=night] input[type=range]::-webkit-slider-thumb { background: var(--ink); }
+html[data-view=night] input[type=range]::-moz-range-track { background: #767a80; }
+html[data-view=night] input[type=range]::-moz-range-thumb { background: var(--ink); }
+html[data-view=night] :focus-visible { outline-color: var(--ink); }

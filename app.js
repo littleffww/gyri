@@ -1,12 +1,12 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
-import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=mobile-v7.18';
+import {createParticles} from './particles.mjs?v=night-719';
+import './languages.mjs?v=night-719';
 import {connectVoiceButton} from './sculpture-voice.mjs?v=mobile-v7.18';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
 import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbody.mjs?v=agency-final';
-import {createGallery} from './gallery.mjs?v=reflect-v7.10';
+import {createGallery} from './gallery.mjs?v=night-719';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
 document.getElementById('portfolioType').media = 'all';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
@@ -150,6 +150,32 @@ const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.01,100);came
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})}catch(e){status('当前浏览器无法启动三维显示，请换用 Chrome / Safari。');throw e}
 renderer.setPixelRatio(Math.min(devicePixelRatio,2));renderer.setSize(innerWidth,innerHeight);renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=.94;renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFShadowMap;$('stage').appendChild(renderer.domElement);
 const gallery=createGallery(scene,renderer);
+const dayParticles = ['#454545', '#999999'];
+const nightParticles = ['#a3a9b3', '#e3e1da'];
+const nightButton = $('nightView');
+let nightView = false;
+function particleColors() {
+ if (state.look !== 'quiet') return LOOKS[state.look].colors;
+ return nightView ? nightParticles : dayParticles;
+}
+function setNightView(enabled) {
+ nightView = enabled;
+ document.documentElement.dataset.view = enabled ? 'night' : 'day';
+ nightButton.setAttribute('aria-pressed', String(enabled));
+ gallery.setNight(enabled);
+ particles?.setColors(particleColors());
+}
+setNightView(document.documentElement.dataset.view === 'night');
+nightButton.onclick = () => {
+ setNightView(!nightView);
+ const view = nightView ? 'night' : 'day';
+ try { localStorage.setItem('gyri-view', view); } catch {}
+ const url = new URL(location.href);
+ if (url.searchParams.has('view')) {
+  url.searchParams.set('view', view);
+  history.replaceState(history.state, '', url);
+ }
+};
 const root=new THREE.Group();root.rotation.order='YXZ';scene.add(root);
 const {material,uniforms,depthMaterial}=makeSoftMaterial();
 const marker=new THREE.Mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({color:'#333333',transparent:true,opacity:.6,depthTest:false}));const markerMaterial=marker.material;root.add(marker);marker.visible=false;marker.renderOrder=10;
@@ -443,7 +469,7 @@ function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now
   if(press&&!press.opening&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
   particleHold=!press?.opening&&drag&&!dragPull&&(state.mouseTool!=='rotate'||!press?.moved)&&now-lastPointerMotion>650;
   const live=sensors.kind==='hand'&&tracked?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
-  particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),state.look==='quiet'?['#454545','#999999']:LOOKS[state.look].colors,openingActive);
+  particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),particleColors(),openingActive);
   if (ready && voice.active) {
    voice.active.update(dt, {
     openingTime: openingActive ? openingElapsed : null,

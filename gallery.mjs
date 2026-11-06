@@ -10,5 +10,22 @@ export function createGallery(scene,renderer){
  const studio=new THREE.Scene();studio.background=new THREE.Color('#adadad');
  for(const [x,y,z,w,h,rotation,intensity]of [[-4,2,2,5,9,Math.PI/3,2.5],[5,1,1,4,7,-Math.PI/3,1.4],[0,2,-6,2,8,0,.50]]){const card=new THREE.Mesh(new THREE.PlaneGeometry(w,h),new THREE.MeshBasicMaterial({color:new THREE.Color('#ffffff').multiplyScalar(intensity),side:THREE.DoubleSide}));card.position.set(x,y,z);card.rotation.y=rotation;studio.add(card)}
  const pmrem=new THREE.PMREMGenerator(renderer),environment=pmrem.fromScene(studio,.035);scene.environment=environment.texture;pmrem.dispose();studio.traverse(o=>{o.geometry?.dispose();o.material?.dispose()});
- return {setColors(){},respond(v){shadow.material.opacity=Math.max(.04,Math.min(.22,.1+v.space*.1));key.position.x=-4+v.light*5;key.intensity=2.5+v.brightness*.5;fill.intensity=.8+v.brightness*.2;},setVisible(value){shadow.visible=value;},update(x,y){shadow.position.y=y-1.97;},get visible(){return shadow.visible}};
+ let night = false;
+ let response = {space: 0, light: 0, brightness: 0};
+ function respond(values) {
+  response = values;
+  shadow.material.opacity = Math.max(.04, Math.min(.22, .1 + values.space * .1));
+  key.position.x = -4 + values.light * 5;
+  key.intensity = (night ? 1.5 : 2.5) + values.brightness * .5;
+  fill.intensity = (night ? 1.15 : .8) + values.brightness * .2;
+ }
+ function setNight(enabled) {
+  night = enabled;
+  scene.background.set(night ? '#17191c' : '#f7f7f7');
+  hemi.intensity = night ? .68 : 1.1;
+  key.color.set(night ? '#e5e9f2' : '#ffffff');
+  fill.color.set(night ? '#bdc8da' : '#ffffff');
+  respond(response);
+ }
+ return {setNight, setColors(){}, respond, setVisible(value){shadow.visible=value;},update(x,y){shadow.position.y=y-1.97;},get visible(){return shadow.visible}};
 }

@@ -1,5 +1,6 @@
 import {traditional} from './traditional.mjs';
 const rows=`
+夜览|Night view|夜間表示
 3D 模型提供 · Yasmina|3D model provided by Yasmina|3Dモデル提供 · Yasmina
 AcrossRCA 小组 ·|AcrossRCA team ·|AcrossRCA チーム ·
 返回 In Process|Back to In Process|In Process に戻る
