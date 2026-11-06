@@ -343,3 +343,14 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
  .dock-buttons { gap: clamp(2px, 1.6vw, 12px); }
  .dock-buttons button { width: clamp(42px, 12vw, 48px); }
 }
+
+#openingChoice {
+ position: fixed;
+ z-index: 20;
+ transform: translate(-50%, -100%);
+ white-space: nowrap;
+ color: #555;
+}
+#openingChoice button { font: inherit; font-size: 12px; padding: 8px 10px; }
+#openingChoice button:hover, #openingChoice button:focus-visible { text-decoration: underline; }
+.panel :disabled, .shape-dock :disabled { opacity: .48; cursor: default; }
