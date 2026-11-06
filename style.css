@@ -289,3 +289,6 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
   html:lang(en) .intro h1 { font-size: 27px; }
   html:lang(en) .intro > p:last-child { font-size: 13px; }
 }
+
+.voice-switch { margin: 12px 0 0; padding: 4px 0; color: var(--ink); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); }
+.voice-switch[aria-pressed="true"] { text-decoration-color: currentColor; }
