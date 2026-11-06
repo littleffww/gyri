@@ -1,4 +1,9 @@
+import {traditional} from './traditional.mjs';
 const rows=`
+3D 模型提供 · Yasmina|3D model provided by Yasmina|3Dモデル提供 · Yasmina
+AcrossRCA 小组 ·|AcrossRCA team ·|AcrossRCA チーム ·
+返回 In Process|Back to In Process|In Process に戻る
+皇家艺术学院 AcrossRCA 合作作品|An AcrossRCA collaboration at the Royal College of Art|Royal College of Art の授業「AcrossRCA」で共同制作した作品
 开场时可拖动旋转，轻点选择是否暂停。|Drag to rotate during the opening. Tap for playback options.|オープニング中もドラッグで回転できます。タップで再生オプションを表示します。
 开场播放选项|Opening playback options|オープニングの再生オプション
 继续观看|Keep watching|続けて見る
@@ -316,15 +321,21 @@ Gyri 探索人在与 AI 共同创作时如何保留自己的判断。拖动或�
 正在载入|Loading|読み込み中
 `;
 const dict=rows.trim().split('\n').map(r=>r.split('|')).filter(r=>r.length===3&&r[0]).sort((a,b)=>b[0].length-a[0].length);
-let lang='zh';try{lang=localStorage.getItem('gyri-language')||'zh'}catch{}if(!['zh','ja','en'].includes(lang))lang='zh';
+let lang='en';
+try {
+ const saved=localStorage.getItem('gyri-language'), parent=localStorage.getItem('portfolio-language');
+ lang=saved || (parent==='zh'?'zh-Hant':parent) || 'en';
+} catch {}
+if(!['zh','zh-Hant','ja','en'].includes(lang))lang='en';
+const exact=new Map(dict.map(row=>[row[0],row]));
 const records=new WeakMap();
-function tr(s){if(lang==='zh')return s;let out=s;for(const [zh,en,ja] of dict)out=out.split(zh).join(lang==='en'?en:ja);return out;}
-let busy=false;function translate(){if(busy)return;busy=true;document.documentElement.lang=lang;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){if(n.parentElement?.closest('.languages'))continue;if(['SCRIPT','STYLE','OPTION'].includes(n.parentElement?.tagName)&&n.parentElement.closest('#language'))continue;if(['SCRIPT','STYLE'].includes(n.parentElement?.tagName))continue;const old=records.get(n);let source=old&&n.nodeValue===old.result?old.source:n.nodeValue;const result=tr(source);records.set(n,{source,result});if(n.nodeValue!==result)n.nodeValue=result;}for(const el of document.querySelectorAll('[aria-label],[title]')){let data=records.get(el)||{};for(const attr of ['aria-label','title']){if(!el.hasAttribute(attr))continue;const value=el.getAttribute(attr),old=data[attr],source=old&&value===old.result?old.source:value,result=tr(source);data[attr]={source,result};if(value!==result)el.setAttribute(attr,result)}records.set(el,data)}document.title=lang==='zh'?'Gyri · 由你决定':lang==='ja'?'Gyri · あなたが決める':'Gyri · Your decision';busy=false;}
+function tr(s){if(lang==='zh')return s;if(lang==='zh-Hant')return traditional(s);const row=exact.get(s);if(row)return row[lang==='en'?1:2];let out=s;for(const [zh,en,ja] of dict)out=out.split(zh).join(lang==='en'?en:ja);return out;}
+let busy=false;function translate(){if(busy)return;busy=true;document.documentElement.lang=lang==='zh'?'zh-Hans':lang;const walker=document.createTreeWalker(document.body,NodeFilter.SHOW_TEXT);let n;while(n=walker.nextNode()){if(n.parentElement?.closest('.languages, [translate=no]'))continue;if(['SCRIPT','STYLE','OPTION'].includes(n.parentElement?.tagName)&&n.parentElement.closest('#language'))continue;if(['SCRIPT','STYLE'].includes(n.parentElement?.tagName))continue;const old=records.get(n);let source=old&&n.nodeValue===old.result?old.source:n.nodeValue;const result=tr(source);records.set(n,{source,result});if(n.nodeValue!==result)n.nodeValue=result;}for(const el of document.querySelectorAll('[aria-label],[title]')){if(el.closest('.languages, [translate=no]'))continue;let data=records.get(el)||{};for(const attr of ['aria-label','title']){if(!el.hasAttribute(attr))continue;const value=el.getAttribute(attr),old=data[attr],source=old&&value===old.result?old.source:value,result=tr(source);data[attr]={source,result};if(value!==result)el.setAttribute(attr,result)}records.set(el,data)}document.title=lang==='zh'?'Gyri · 由你决定':lang==='zh-Hant'?'Gyri · 由你決定':lang==='ja'?'Gyri · あなたが決める':'Gyri · Your decision';busy=false;}
 const choices=[...document.querySelectorAll('[data-lang]')];
 function syncLanguage(){for(const button of choices)button.setAttribute('aria-pressed',String(button.dataset.lang===lang));translate()}
 // Only the interface fades. The live sculpture and its audio keep their own clocks.
 const languageSurfaces = [...document.querySelectorAll(
- '.brand span, .header-actions > button, .intro, .panel, .shape-dock, #openingChoice, #concept > p, #concept h2'
+ '.brand span, .header-actions > button, .intro, .panel, .shape-dock, #openingChoice'
 )];
 const motionPreference = matchMedia('(prefers-reduced-motion: reduce)');
 let requestedLanguage = lang;

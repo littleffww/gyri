@@ -1,12 +1,11 @@
 {
-  "name": "Gyri v7.16",
+  "name": "Gyri v7.17",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
-  "source_commit": "638a2107e19576b00d83efca5169f80bf094ea65",
-  "site_version": 7,
-  "site_version_id": "appgprj_6aebcc4425f08191bdebfd5509e39808~appgver_f5c8fce15a888191be280eb59938fb09",
+  "source_commit": "c1b8cd77e0a259a36c8bd45b9859f328f160afde",
+  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_922b3f39fd388191808814ec5cf81bfa",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7.16-2026-11-06",
-  "snapshot_tag": "gyri-v7.16-2026-11-06",
-  "note": "The opening slowly turns from the front, yields to a drag, then eases back into rotation until the sculpture gathers."
+  "snapshot_branch": "codex/gyri-v7.17-2026-11-06",
+  "snapshot_tag": "gyri-v7.17-2026-11-06",
+  "note": "Standalone edition synchronized with the portfolio artwork, including four languages and AcrossRCA credits."
 }

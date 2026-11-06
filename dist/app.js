@@ -1,6 +1,6 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=fade-v7.15';
+import './languages.mjs?v=gyri-hant';
 import {connectVoiceButton} from './sculpture-voice.mjs?v=fade-v7.15';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
@@ -8,6 +8,7 @@ import {Sensors} from './sensors.mjs?v=agency-final';
 import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbody.mjs?v=agency-final';
 import {createGallery} from './gallery.mjs?v=reflect-v7.10';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
+document.getElementById('portfolioType').media = 'all';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
 const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',mouseTool:'rotate',pitch:0,spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
 const state={...defaults};
