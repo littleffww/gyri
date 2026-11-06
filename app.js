@@ -1,6 +1,6 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=agency-final';
-import './languages.mjs?v=agency-final';
+import './languages.mjs?v=opening-v7.1';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -18,6 +18,7 @@ const targetAxis=new THREE.Vector3(1,0,0),targetDelta=new THREE.Vector3(),grabPo
 const poseFilter=new StablePose(),blink=new BlinkTrigger(),beat=new RisingBeat();
 let conformity=0,hasTrace=false,lastPointerMotion=0;
 let particles=null,particleAmount=0,particleHold=false,particleBurst=0;
+let openingPending=state.motion,openingActive=false,openingElapsed=0;
 let sculpture=null,baseMesh=null,ready=false,phase=0,pulseAge=99,lastTime=0,lastUI=0,trace=0,tracked=false,calibration=null,gazeZero=null,toastTimer,pullOrigin=null,previousRaw=null,demoStep=-1,demoTime=0;
 const shapes={
  inflate:{number:'01 / INFLATE',title:'张掌 · 让表面鼓起',description:'板片向外鼓胀，体积变得饱满。<br>每个部件本身都在变形。'},
@@ -34,6 +35,23 @@ const modes={
  audio:{badge:'声音',title:'用声音让身体起伏',text:'默认：<b>音量</b>控制鼓胀与光泽，<b>高低频分布</b>移动色带，<b>节拍</b>带动光影。开启麦克风后试着说话、哼唱或拍手。'}
 };
 function status(t){$('status').textContent=t}
+// Run once after the geometry is ready; actual input immediately takes over.
+function stopOpening(event){
+ if(!openingPending&&!openingActive)return;
+ openingPending=false;
+ if(openingActive){openingActive=false;particleAmount=event?.type==='input'&&event.target===$('particleRange')?+event.target.value:0;$('particleRange').value=particleAmount;status('模型已就绪，移动鼠标试试看。')}
+}
+function stepOpening(dt){
+ if(!ready||document.hidden)return;
+ if(openingPending){openingPending=false;openingActive=true;openingElapsed=0;particleAmount=0;$('particleRange').value=0;status('开场演示：10 秒慢慢散开，随时操作即可接管。');return}
+ if(!openingActive)return;
+ openingElapsed=Math.min(10,openingElapsed+dt);
+ particleAmount=openingElapsed/10;
+ $('particleRange').value=particleAmount;
+ if(openingElapsed>=10){openingActive=false;status('试试「聚合」收回模型，或拖动「散开程度」控制粒子。')}
+}
+for(const type of ['pointerdown','wheel','input','click'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
+document.addEventListener('keydown',e=>{if(!['Tab','Shift','Control','Alt','Meta'].includes(e.key))stopOpening()},{capture:true});
 function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2200)}
 function describeShape(shape){state.shape=shape;$('shapeNumber').textContent=shapes[shape].number;$('shapeTitle').textContent=shapes[shape].title;$('shapeDescription').innerHTML=shapes[shape].description;}
 function clearTargets(){field.clear();for(const key in targets)targets[key]=0;pullOrigin=null;previousRaw=null;}
@@ -153,7 +171,7 @@ function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(sa
 loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;$('count').textContent='Gyri · 互动雕塑';if(!sensors.kind&&!sensors.starting)status('模型已就绪，移动鼠标试试看。')}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
 function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min((now-lastTime)/1000,.1):.016;lastTime=now;sensorTick(now);
- if(!state.frozen){if(state.motion||state.demo)phase+=dt*state.speed;
+ if(!state.frozen){stepOpening(dt);if(state.motion||state.demo)phase+=dt*state.speed;
   if(state.demo){demoTime+=dt*state.speed;const stage=Math.floor(demoTime/4.8)%6;if(stage!==demoStep){demoStep=stage;if(stage<5)simulate(Object.keys(shapes)[stage],true);else{clearTargets();poseLabel('松手 · 缓慢回弹','自动演示 · 模拟输入')}}if(stage===2)targetAxis.set(Math.cos(demoTime*.12),Math.sin(demoTime*.12),0);if(stage===4)targetDelta.set(.8+Math.sin(demoTime)*.3,.35,.2);if(stage<5)field.feed({position:.5+Math.sin(demoTime*.4)*.4,energy:.5+Math.sin(demoTime*.65)*.45,motion:.3+Math.sin(demoTime*.7)*.2},now,true)}
   let energy=0;for(const k in current){let goal=targets[k]*(k==='grip'?1:state.spread)*(1-conformity);[current[k],velocity[k]]=springStep(current[k],velocity[k],goal,dt,state.elastic);energy+=Math.abs(current[k])*.3;trace=Math.max(trace,Math.min(1,Math.abs(velocity[k])*.12))}
   trace*=Math.exp(-dt*(state.elastic?.65:3));pulseAge+=dt;

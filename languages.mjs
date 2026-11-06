@@ -1,4 +1,7 @@
 const rows=`
+开场演示：10 秒慢慢散开，随时操作即可接管。|Opening demo: a 10-second dissolve. Interact anytime to take over.|オープニング：10秒かけて粒子に。いつでも操作できます。
+试试「聚合」收回模型，或拖动「散开程度」控制粒子。|Try Gather to restore the sculpture, or move Dispersion to control the particles.|「集合」で元に戻すか、「拡散度」のスライダーで粒子を動かしてみてください。
+
 投影浓度|Shadow density|影の濃さ
 
 由你决定|Your decision|あなたが決める
