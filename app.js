@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=agency-final';
-import './languages.mjs?v=voice-v7.5';
-import {connectVoiceButton} from './sculpture-voice.mjs';
+import './languages.mjs?v=tap-v7.6';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=tap-v7.6';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -21,7 +21,8 @@ let conformity=0,hasTrace=false,lastPointerMotion=0;
 let particles=null,particleAmount=0,particleHold=false,particleBurst=0;
 const openingLegSeconds = 10;
 const openingHoldSeconds = 1.5;
-let openingPending = state.motion;
+const openingPrompt = '轻点雕塑，听它散开，再聚合。';
+let openingPending = true;
 let openingActive = false;
 let openingElapsed = 0;
 let sculpture=null,baseMesh=null,ready=false,phase=0,pulseAge=99,lastTime=0,lastUI=0,trace=0,tracked=false,calibration=null,gazeZero=null,toastTimer,pullOrigin=null,previousRaw=null,demoStep=-1,demoTime=0;
@@ -51,23 +52,27 @@ if (!voiceButton) {
  $('instructions').before(voiceButton);
 }
 const voice = connectVoiceButton(voiceButton, toast);
-function stopOpening(event){
- if(event?.target?.closest?.('#voiceSwitch'))return;
- if(!openingPending&&!openingActive)return;
- openingPending=false;
- if(openingActive){openingActive=false;particleAmount=event?.type==='input'&&event.target===$('particleRange')?+event.target.value:0;$('particleRange').value=particleAmount;status('')}
+function stopOpening(event) {
+ if (!openingActive || event.target.closest?.('#voiceSwitch, .languages')) return;
+ openingActive = false;
+ particleAmount = 0;
+ $('particleRange').value = 0;
+ status('');
+}
+function beginOpening() {
+ if (!openingPending) return;
+ openingPending = false;
+ if (state.mode !== 'manual') selectMode('manual');
+ state.frozen = false;
+ state.demo = false;
+ particleAmount = 0;
+ openingElapsed = 0;
+ openingActive = true;
+ voice.start();
+ status('开场演示中，触碰即可开始操作。');
 }
 function stepOpening(dt) {
- if (!ready || document.hidden) return;
- if (openingPending) {
-  openingPending = false;
-  openingActive = true;
-  openingElapsed = 0;
-  status('开场演示中，触碰即可开始操作。');
-  return;
- }
- if (!openingActive) return;
-
+ if (!openingActive || !ready || document.hidden || voice.loading) return;
  openingElapsed += dt;
  const gatherStart = openingLegSeconds + openingHoldSeconds;
  const duration = gatherStart + openingLegSeconds;
@@ -80,7 +85,7 @@ function stepOpening(dt) {
   status('');
  }
 }
-for(const type of ['pointerdown','wheel','input','click'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
+for(const type of ['pointerdown','wheel','input'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
 document.addEventListener('keydown',e=>{if(!['Tab','Shift','Control','Alt','Meta'].includes(e.key))stopOpening(e)},{capture:true});
 function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2200)}
 function describeShape(shape){state.shape=shape;}
@@ -157,9 +162,19 @@ $('snapshot').onclick=()=>{if(!ready)return;renderer.render(scene,camera);render
 let drag=false,dragPull=false,px=0,py=0,mouseOrigin=null;
 function pointerResponse(e){field.feed({position:e.clientX/innerWidth,energy:1-e.clientY/innerHeight},performance.now(),true)}
 renderer.domElement.style.touchAction='none';
-renderer.domElement.onpointerdown=e=>{if(sensors.kind||sensors.starting||state.mode!=='manual')selectMode('manual');state.demo=false;particleHold=false;lastPointerMotion=performance.now();drag=true;dragPull=state.shape==='pull'||e.shiftKey;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);if(dragPull){clearTargets();describeShape('pull');grabPoint.set(0,clamp((.5-e.clientY/innerHeight)*5,-1.6,1.6),0);targetDelta.set(0,0,0);targets.grip=1;mouseOrigin={x:e.clientX,y:e.clientY};poseLabel('拖动 · 局部牵引','鼠标输入')}pointerResponse(e);field.trigger(performance.now());updateControls()};
+renderer.domElement.tabIndex = 0;
+renderer.domElement.setAttribute('aria-label', openingPrompt);
+renderer.domElement.addEventListener('click', beginOpening);
+renderer.domElement.addEventListener('keydown', event => {
+ if (openingPending && ['Enter', ' '].includes(event.key)) {
+  event.preventDefault();
+  event.stopPropagation();
+  beginOpening();
+ }
+});
+renderer.domElement.onpointerdown=e=>{if(openingPending)return;if(sensors.kind||sensors.starting||state.mode!=='manual')selectMode('manual');state.demo=false;particleHold=false;lastPointerMotion=performance.now();drag=true;dragPull=state.shape==='pull'||e.shiftKey;px=e.clientX;py=e.clientY;renderer.domElement.setPointerCapture(e.pointerId);if(dragPull){clearTargets();describeShape('pull');grabPoint.set(0,clamp((.5-e.clientY/innerHeight)*5,-1.6,1.6),0);targetDelta.set(0,0,0);targets.grip=1;mouseOrigin={x:e.clientX,y:e.clientY};poseLabel('拖动 · 局部牵引','鼠标输入')}pointerResponse(e);field.trigger(performance.now());updateControls()};
 renderer.domElement.onpointermove=e=>{if(state.mode==='manual'&&!state.demo&&!state.frozen)pointerResponse(e);if(!drag||state.frozen)return;particleHold=false;lastPointerMotion=performance.now();if(dragPull){targetDelta.set(clamp((e.clientX-mouseOrigin.x)/innerWidth*7,-1.6,1.6),clamp((mouseOrigin.y-e.clientY)/innerHeight*5,-1.6,1.6),.15)}else if(e.altKey){state.rotation+=(e.clientX-px)*.008;state.roll=clamp(state.roll+(e.clientY-py)*.002,-.4,.4)}else{const dx=(e.clientX-px)/innerWidth*8,dy=(py-e.clientY)/innerHeight*7;if(state.shape==='inflate')targets.inflate=clamp(targets.inflate+dy,-.45,1.1);if(state.shape==='compress')targets.inflate=clamp(targets.inflate-Math.abs(dy)-Math.abs(dx)*.5,-.6,0);if(state.shape==='stretch')targets.stretch=clamp(targets.stretch+dx,-.5,1.6);if(state.shape==='twist')targets.twist=clamp(targets.twist+dx*2,-2.2,2.2)}px=e.clientX;py=e.clientY};
-renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(drag&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
+renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!drag)return;if(drag&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
 renderer.domElement.onpointerleave=()=>{if(!drag&&state.mode==='manual'&&!state.demo)field.clear()};
 renderer.domElement.ondblclick=()=>emitPulse(true);renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
 addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)simulate(Object.keys(shapes)[Number(e.key)-1])});
@@ -197,7 +212,7 @@ function trackFrame(now){const result=sensors.frame(now);if(!result)return;
  }
 }
 function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(samples){const level=audioLevel(samples,+$('sensitivity').value);targets.inflate=level*.9;targets.stretch=0;targets.twist=0;const frequency=sensors.frequency();field.feed({position:level>.015?spectralPosition(frequency.bins,frequency.sampleRate,frequency.minDb,frequency.maxDb):.5,energy:level,motion:clamp(Math.abs(level-lastAudioLevel)*12,0,1)},now);lastAudioLevel=level;if(beat.update(level,now))emitPulse();$('audioMeter').style.width=(level*100)+'%';all('.meter')[0].setAttribute('aria-valuenow',Math.round(level*100));describeShape('inflate');poseLabel('声音 · 体积起伏','麦克风 · 实时音量')}}catch(e){sensors.stop();clearTargets();status('识别中断，输入已关闭。可以重试或用模拟手势。');syncSensorUI();console.error(e)}}
-loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(!sensors.kind&&!sensors.starting)status('')}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
+loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(openingPending && state.mode==='manual')status(openingPrompt)}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
 function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min((now-lastTime)/1000,.1):.016;lastTime=now;sensorTick(now);
  if(!state.frozen){stepOpening(dt);if(state.motion||state.demo)phase+=dt*state.speed;
