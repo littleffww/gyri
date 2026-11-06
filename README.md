@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.6](https://github.com/littleffww/gyri/tree/codex/gyri-v7.6-2026-11-06) | 2026-11-06 | First sculpture tap starts the voiced opening. The sound switch also works during the animation. |
 | [Gyri v7.5.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.5.1-2026-11-06) | 2026-11-06 | Voice control also initializes on returning visitors’ cached pages. |
 | [Gyri v7.5](https://github.com/littleffww/gyri/tree/codex/gyri-v7.5-2026-11-06) | 2026-11-06 | A recorded human voice follows the sculpture’s movement, opens into reverberation and fades at rest. |
 | [Gyri v7.4](https://github.com/littleffww/gyri/tree/codex/gyri-v7.4-2026-11-06) | 2026-11-06 | Uses the same Chinese typeface for headings and body text. |
@@ -25,7 +26,7 @@ An AcrossRCA interaction study about retaining authorship while talking with AI.
 
 ## Current experience
 
-After loading, the sculpture disperses over ten seconds, holds for 1.5 seconds, then gathers over ten seconds. Visitors can take control at any point. Reduced-motion preferences skip the opening. The introduction and controls are available in Chinese, Japanese and English.
+On the first tap of the sculpture, its voice starts and it disperses over ten seconds, holds for 1.5 seconds, then gathers over ten seconds. Visitors can take control at any point. The opening waits for an explicit tap or keyboard activation. The introduction and controls are available in Chinese, Japanese and English.
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 

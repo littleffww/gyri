@@ -92,18 +92,24 @@ export class SculptureVoice {
 export function connectVoiceButton(button, reportError) {
   let session = null;
   let recording = null;
+  let enabled = true;
+  function syncButton() {
+    button.setAttribute('aria-pressed', String(enabled));
+    button.textContent = enabled ? '关闭作品人声' : '开启作品人声';
+  }
+  syncButton();
   function off() {
     const old = session;
     session = null;
-    button.setAttribute('aria-pressed', 'false');
-    button.textContent = '开启作品人声';
+    enabled = false;
+    syncButton();
     if (old) {
       old.abort.abort();
       old.context.close().catch(() => {});
     }
   }
-  button.onclick = async () => {
-    if (session) { off(); return; }
+  async function start() {
+    if (!enabled || session) return;
     let current;
     try {
       const Context = window.AudioContext || window.webkitAudioContext;
@@ -127,6 +133,12 @@ export function connectVoiceButton(button, reportError) {
       off();
       reportError('人声载入失败，点击可重试。');
     }
+  }
+  button.onclick = () => {
+    if (enabled) return off();
+    enabled = true;
+    syncButton();
+    start();
   };
-  return {off, get active() { return session?.voice; }};
+  return {start, off, get loading() { return !!session && !session.voice; }, get active() { return session?.voice; }};
 }
