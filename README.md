@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.8](https://github.com/littleffww/gyri/tree/codex/gyri-v7.8-2026-11-06) | 2026-11-06 | Front view, a two-second hold at full dispersion, and tap to pause or resume motion and voice together. |
 | [Gyri v7.7](https://github.com/littleffww/gyri/tree/codex/gyri-v7.7-2026-11-06) | 2026-11-06 | Automatic opening and voice playback with a speaker indicator and tap-to-enable fallback. |
 | [Gyri v7.6](https://github.com/littleffww/gyri/tree/codex/gyri-v7.6-2026-11-06) | 2026-11-06 | First sculpture tap starts the voiced opening. The sound switch also works during the animation. |
 | [Gyri v7.5.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.5.1-2026-11-06) | 2026-11-06 | Voice control also initializes on returning visitors’ cached pages. |
@@ -27,7 +28,7 @@ An AcrossRCA interaction study about retaining authorship while talking with AI.
 
 ## Current experience
 
-After loading, the sculpture requests audio playback and disperses over ten seconds, holds for 1.5 seconds, then gathers over ten seconds. Visitors can take control at any point. Browsers requiring activation enable sound on the first tap. Reduced-motion preferences skip the automatic animation. The introduction and controls are available in Chinese, Japanese and English.
+The opening faces the viewer: ten seconds to disperse, two seconds fully dispersed, ten seconds to gather. Recorded voice opens into reverberation as particles move outward, fades at rest and returns closer during gathering. Tap the sculpture or press Space to pause and resume both from the same moment. Dragging takes over; the speaker switches sound independently. When the browser blocks automatic audio, tap the speaker to hear the ongoing movement. Reduced-motion preferences skip the automatic animation. The introduction and controls are available in Chinese, Japanese and English.
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 
