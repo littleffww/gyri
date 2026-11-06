@@ -1,6 +1,6 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=agency-final';
-import './languages.mjs?v=opening-v7.1';
+import './languages.mjs?v=opening-v7.2';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
@@ -18,7 +18,11 @@ const targetAxis=new THREE.Vector3(1,0,0),targetDelta=new THREE.Vector3(),grabPo
 const poseFilter=new StablePose(),blink=new BlinkTrigger(),beat=new RisingBeat();
 let conformity=0,hasTrace=false,lastPointerMotion=0;
 let particles=null,particleAmount=0,particleHold=false,particleBurst=0;
-let openingPending=state.motion,openingActive=false,openingElapsed=0;
+const openingLegSeconds = 10;
+const openingHoldSeconds = 1.5;
+let openingPending = state.motion;
+let openingActive = false;
+let openingElapsed = 0;
 let sculpture=null,baseMesh=null,ready=false,phase=0,pulseAge=99,lastTime=0,lastUI=0,trace=0,tracked=false,calibration=null,gazeZero=null,toastTimer,pullOrigin=null,previousRaw=null,demoStep=-1,demoTime=0;
 const shapes={
  inflate:{number:'01 / INFLATE',title:'张掌 · 让表面鼓起',description:'板片向外鼓胀，体积变得饱满。<br>每个部件本身都在变形。'},
@@ -27,35 +31,48 @@ const shapes={
  twist:{number:'04 / TORSION',title:'转腕 · 拧曲身体',description:'张开手掌，再左右倾斜。<br>形体上下产生不同程度的扭转。'},
  pull:{number:'05 / TOUCH',title:'捏合 · 牵引局部',description:'手的高度决定触碰的位置。<br>捏住、移动，再松开。'}
 };
-const compactGuides={manual:'拖动改变形体；按住不动逐渐颗粒化。',hand:'默认：张掌鼓胀、握拳压缩；移动手掌带动颜色与光。',eye:'先校准。视线左右带动色带，眨眼传递光影。',audio:'音量改变形体与光泽，高低频带动色带，节拍改变光影。'};
-const modes={
- manual:{badge:'鼠标',title:'移动鼠标，让颜色流动',text:'拖动改变当前形体；按住不动，折片逐渐颗粒化。Shift 拖动牵引局部，Alt 拖动旋转。松手可留下痕迹，K 键记录此刻。'},
- hand:{badge:'手势',title:'动作直接改变形体',text:'<b>张掌</b>鼓胀 · <b>握拳</b>受压<br><b>双手拉开</b>伸长 · <b>张掌转腕</b>拧曲<br><b>捏合并移动</b>牵引局部；松开回弹。<br>默认：手的位置带动色带与光位，张掌增加光泽。'},
- eye:{badge:'目光 · 实验',title:'目光拨动，眨眼传递',text:'先看向模型中央并<b>校准目光</b>。默认：视线左右带动色带与光位，眨眼传递光影和波纹。请保持头部稳定。'},
- audio:{badge:'声音',title:'用声音让身体起伏',text:'默认：<b>音量</b>控制鼓胀与光泽，<b>高低频分布</b>移动色带，<b>节拍</b>带动光影。开启麦克风后试着说话、哼唱或拍手。'}
+const modes = {
+ manual: {badge: '鼠标', guide: '拖动雕塑塑形，按住不动让它散开。'},
+ hand: {badge: '手势', guide: '张掌膨胀，握拳压缩。双手拉伸，捏合牵引。'},
+ eye: {badge: '目光', guide: '看向中央校准，再左右看。眨眼释放粒子。'},
+ audio: {badge: '声音', guide: '对着麦克风轻声哼唱，或拍手释放粒子。'}
 };
 function status(t){$('status').textContent=t}
 // Run once after the geometry is ready; actual input immediately takes over.
 function stopOpening(event){
  if(!openingPending&&!openingActive)return;
  openingPending=false;
- if(openingActive){openingActive=false;particleAmount=event?.type==='input'&&event.target===$('particleRange')?+event.target.value:0;$('particleRange').value=particleAmount;status('模型已就绪，移动鼠标试试看。')}
+ if(openingActive){openingActive=false;particleAmount=event?.type==='input'&&event.target===$('particleRange')?+event.target.value:0;$('particleRange').value=particleAmount;status('')}
 }
-function stepOpening(dt){
- if(!ready||document.hidden)return;
- if(openingPending){openingPending=false;openingActive=true;openingElapsed=0;particleAmount=0;$('particleRange').value=0;status('开场演示：10 秒慢慢散开，随时操作即可接管。');return}
- if(!openingActive)return;
- openingElapsed=Math.min(10,openingElapsed+dt);
- particleAmount=openingElapsed/10;
- $('particleRange').value=particleAmount;
- if(openingElapsed>=10){openingActive=false;status('试试「聚合」收回模型，或拖动「散开程度」控制粒子。')}
+function stepOpening(dt) {
+ if (!ready || document.hidden) return;
+ if (openingPending) {
+  openingPending = false;
+  openingActive = true;
+  openingElapsed = 0;
+  status('开场演示中，触碰即可开始操作。');
+  return;
+ }
+ if (!openingActive) return;
+
+ openingElapsed += dt;
+ const gatherStart = openingLegSeconds + openingHoldSeconds;
+ const duration = gatherStart + openingLegSeconds;
+ const progress = clamp(Math.min(openingElapsed, duration - openingElapsed) / openingLegSeconds, 0, 1);
+ // Ease into the fully scattered pose, hold it, then retrace the same curve.
+ particleAmount = progress * progress * (3 - 2 * progress);
+ $('particleRange').value = particleAmount;
+ if (openingElapsed >= duration) {
+  openingActive = false;
+  status('');
+ }
 }
 for(const type of ['pointerdown','wheel','input','click'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
 document.addEventListener('keydown',e=>{if(!['Tab','Shift','Control','Alt','Meta'].includes(e.key))stopOpening()},{capture:true});
 function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2200)}
-function describeShape(shape){state.shape=shape;$('shapeNumber').textContent=shapes[shape].number;$('shapeTitle').textContent=shapes[shape].title;$('shapeDescription').innerHTML=shapes[shape].description;}
+function describeShape(shape){state.shape=shape;}
 function clearTargets(){field.clear();for(const key in targets)targets[key]=0;pullOrigin=null;previousRaw=null;}
-function poseLabel(label,source){$('poseName').textContent=label;$('inputLabel').textContent=source}
+function poseLabel(label){const readout=$('poseName');readout.hidden=state.mode==='manual';readout.textContent=label;}
 const scene=new THREE.Scene();
 const camera=new THREE.PerspectiveCamera(36,innerWidth/innerHeight,.01,100);camera.position.set(0,1,10);camera.lookAt(0,0,0);
 let renderer;try{renderer=new THREE.WebGLRenderer({antialias:true,preserveDrawingBuffer:true})}catch(e){status('当前浏览器无法启动三维显示，请换用 Chrome / Safari。');throw e}
@@ -66,16 +83,15 @@ const {material,uniforms,depthMaterial}=makeSoftMaterial();
 const marker=new THREE.Mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({color:'#333333',transparent:true,opacity:.6,depthTest:false}));const markerMaterial=marker.material;root.add(marker);marker.visible=false;marker.renderOrder=10;
 function layout(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const mobile=innerWidth<=760;camera.position.set(0,mobile?1.5:1.7,mobile?17:10.3);const width=2*Math.tan(THREE.MathUtils.degToRad(18))*camera.position.z*camera.aspect;root.position.set(mobile?.35:-width*.035,mobile?1.35:-.09,0);camera.lookAt(0,mobile?.35:-.15,0);gallery.update(root.position.x,root.position.y)}layout();addEventListener('resize',layout);
 const sensors=new Sensors($('video'),message=>{if(!sensors.kind&&!sensors.starting)clearTargets();status(message);syncSensorUI()});
-function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';$('sensorBadge').textContent=(active?'已开启 · ':busy?'正在启动 · ':'')+modes[state.mode].badge;}
-function updateControls(){for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);$('eventLabel').textContent=state.frozen?'已暂停':state.demo?'正在演示模拟动作':'拖动塑形 · 停留解构 · K 留下痕迹';
- for(const name of ['inflate','stretch','twist']){const value=current[name],limit=name==='inflate'?(value<0?.48:.85):name==='stretch'?1.15:1.6,percent=Math.round(value/limit*100);$(name+'Meter').style.width=clamp(Math.abs(percent),0,100)+'%';$(name+'Number').textContent=(percent>0?'+':'')+percent+'%'}
+function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';}
+function updateControls(){for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
  all('[data-shape]').forEach(b=>{const active=state.mode==='manual'&&state.shape===b.dataset.shape&&Object.values(targets).some(v=>Math.abs(v)>.02);b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
 }
-function selectMode(mode){sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').innerHTML=`<h3>${modes[mode].title}</h3><p class="full-guide">${modes[mode].text}</p><p class="compact-guide">${compactGuides[mode]}</p>`;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status(mode==='manual'?'移动鼠标，让颜色与光影跟随你。':'点击开启'+(mode==='audio'?'麦克风':'摄像头')+'，让身体回应你。');syncSensorUI();updateControls()}
+function selectMode(mode){sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
 function simulate(shape,fromDemo=false){if(!fromDemo){selectMode('manual');state.frozen=false}describeShape(shape);clearTargets();targetAxis.set(1,0,0);if(shape==='inflate')targets.inflate=.85;if(shape==='compress')targets.inflate=-.48;if(shape==='stretch')targets.stretch=1.15;if(shape==='twist')targets.twist=1.6;if(shape==='pull'){grabPoint.set(0,.65,0);targetDelta.set(1.1,.45,.2);targets.grip=1}const simulation={inflate:{position:.8,energy:.95,motion:.35},compress:{position:.15,energy:.08,motion:.2},stretch:{position:.62,energy:.65,motion:.6},twist:{position:.22,energy:.72,motion:.9},pull:{position:.92,energy:.5,motion:.55}}[shape];field.feed(simulation,performance.now(),true);field.trigger(performance.now());poseLabel(shapes[shape].title,fromDemo?'自动演示 · 模拟输入':'模拟输入 · 未使用摄像头');if(!fromDemo)status('模拟手势效果，未使用摄像头。');updateControls()}
 function release(announce=true){state.demo=false;clearTargets();poseLabel('松手 · 等待下一次决定',sensors.kind?'实时输入仍开启':'模拟输入');if(announce)toast(sensors.kind?'已释放；下一个实时动作会继续控制模型':'松手，让形体恢复');updateControls()}
 function emitPulse(announce=false){if(state.frozen)return;pulseAge=0;trace=1;particleBurst=1;field.trigger(performance.now());if(announce)toast('波纹正在穿过表面')}
-function setLook(name){state.look=LOOKS[name]?name:'acid';const look=LOOKS[state.look];uniforms.uArtMix.value=state.look==='quiet'?0:1;uniforms.uPigmentA.value.set(look.colors[0]);uniforms.uPigmentB.value.set(look.colors[1]);uniforms.uPigmentC.value.set(look.colors[2]);gallery.setColors(look.colors[0],look.colors[1]);all('[data-look]').forEach(b=>{const active=b.dataset.look===state.look;b.setAttribute('aria-pressed',String(active));b.classList.toggle('selected',active)});$('lookName').textContent=look.name;}
+function setLook(name){state.look=LOOKS[name]?name:'acid';const look=LOOKS[state.look];uniforms.uArtMix.value=state.look==='quiet'?0:1;uniforms.uPigmentA.value.set(look.colors[0]);uniforms.uPigmentB.value.set(look.colors[1]);uniforms.uPigmentC.value.set(look.colors[2]);gallery.setColors(look.colors[0],look.colors[1]);all('[data-look]').forEach(b=>{const active=b.dataset.look===state.look;b.setAttribute('aria-pressed',String(active));b.classList.toggle('selected',active)});}
 function renderRoutes(){
  const labels=SOURCE_LABELS[state.mode];
  $('routeList').innerHTML=Object.entries(CHANNELS).map(([key,item])=>`<div class="route"><div class="route-heading"><label for="route-${key}">${item.label}</label><select id="route-${key}" data-route="${key}" aria-label="${item.label}的输入">${Object.entries(labels).map(([source,label])=>`<option value="${source}" ${routes[key].source===source?'selected':''}>${label}</option>`).join('')}</select></div><div class="route-gain"><input id="gain-${key}" data-gain="${key}" type="range" min="0" max="1.5" step=".05" value="${routes[key].gain}" aria-label="${item.label}的变化幅度"><output id="gain-value-${key}" for="gain-${key}">${Math.round(routes[key].gain*100)}%</output></div></div>`).join('');
@@ -119,10 +135,10 @@ $('particleRange').oninput=e=>particleAmount=+e.target.value;
 all('[data-form]').forEach(b=>b.onclick=()=>{release(false);particles?.setForm(b.dataset.form);particleAmount=0;$('particleRange').value=0;all('[data-form]').forEach(x=>x.setAttribute('aria-pressed',String(x===b)))});
 $('demo').onclick=()=>{const next=!state.demo;if(next){selectMode('manual');state.frozen=false;demoTime=0;demoStep=-1}state.demo=next;if(!next)clearTargets();status(next?'正在依次模拟张掌、握拳、拉伸、扭曲和局部牵引。':'演示已停止，身体正在恢复。');updateControls()};
 $('freeze').onclick=()=>{state.frozen=!state.frozen;updateControls();toast(state.frozen?(sensors.kind?'画面暂停；实时输入仍开启':'画面已暂停'):'继续运动')};
-for(const id of ['spread','scale','speed'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};$('sensitivity').oninput=e=>$('sensitivityValue').textContent=(+e.target.value).toFixed(1)+'×';$('motion').onchange=e=>state.motion=e.target.checked;$('elastic').onchange=e=>state.elastic=e.target.checked;$('wire').onchange=e=>material.wireframe=e.target.checked;$('space').onchange=e=>gallery.setVisible(e.target.checked);$('base').onchange=e=>{if(baseMesh)baseMesh.visible=e.target.checked;$('count').textContent=e.target.checked?'Gyri · 含原模型底座':'Gyri · 互动雕塑'};
+for(const id of ['spread','scale','speed'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};$('sensitivity').oninput=e=>$('sensitivityValue').textContent=(+e.target.value).toFixed(1)+'×';$('motion').onchange=e=>state.motion=e.target.checked;$('elastic').onchange=e=>state.elastic=e.target.checked;$('wire').onchange=e=>material.wireframe=e.target.checked;$('space').onchange=e=>gallery.setVisible(e.target.checked);$('base').onchange=e=>{if(baseMesh)baseMesh.visible=e.target.checked};
 $('calibrate').onclick=()=>{if(sensors.kind!=='eye')return;calibration={start:performance.now(),values:[]};gazeZero=null;$('calibrate').textContent='校准中，请保持头部稳定…';status('看向模型中央，自然睁眼，约 2 秒完成校准。')};
 $('conceptOpen').onclick=()=>$('concept').showModal();$('conceptClose').onclick=()=>$('concept').close();
-function reset(){clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('count').textContent='Gyri · 互动雕塑';$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
+function reset(){clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
 $('reset').onclick=reset;$('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('当前浏览器不支持全屏')}};
 $('snapshot').onclick=()=>{if(!ready)return;renderer.render(scene,camera);renderer.domElement.toBlob(blob=>{if(!blob){toast('保存失败，请重试');return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gyri-UNSMOOTH-${Date.now()}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('已保存场景，不包含摄像头画面')},'image/png')};
 let drag=false,dragPull=false,px=0,py=0,mouseOrigin=null;
@@ -168,7 +184,7 @@ function trackFrame(now){const result=sensors.frame(now);if(!result)return;
  }
 }
 function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(samples){const level=audioLevel(samples,+$('sensitivity').value);targets.inflate=level*.9;targets.stretch=0;targets.twist=0;const frequency=sensors.frequency();field.feed({position:level>.015?spectralPosition(frequency.bins,frequency.sampleRate,frequency.minDb,frequency.maxDb):.5,energy:level,motion:clamp(Math.abs(level-lastAudioLevel)*12,0,1)},now);lastAudioLevel=level;if(beat.update(level,now))emitPulse();$('audioMeter').style.width=(level*100)+'%';all('.meter')[0].setAttribute('aria-valuenow',Math.round(level*100));describeShape('inflate');poseLabel('声音 · 体积起伏','麦克风 · 实时音量')}}catch(e){sensors.stop();clearTargets();status('识别中断，输入已关闭。可以重试或用模拟手势。');syncSensorUI();console.error(e)}}
-loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;$('count').textContent='Gyri · 互动雕塑';if(!sensors.kind&&!sensors.starting)status('模型已就绪，移动鼠标试试看。')}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
+loadSoftGeometry().then(({body,base,meta})=>{sculpture=new THREE.Mesh(body,material);sculpture.frustumCulled=false;sculpture.castShadow=true;sculpture.receiveShadow=true;sculpture.customDepthMaterial=depthMaterial;root.add(sculpture);particles=createParticles(body,root,uniforms);baseMesh=new THREE.Mesh(base,new THREE.MeshStandardMaterial({color:'#c0beb5',roughness:.64,metalness:.2}));baseMesh.visible=false;baseMesh.castShadow=true;root.add(baseMesh);ready=true;if(!sensors.kind&&!sensors.starting)status('')}).catch(e=>{status('模型未能加载，请刷新重试。');console.error(e)});
 const markerState={axis:[1,0,0],grab:[0,0,0],delta:[0,0,0]};
 function animate(now){requestAnimationFrame(animate);const dt=lastTime?Math.min((now-lastTime)/1000,.1):.016;lastTime=now;sensorTick(now);
  if(!state.frozen){stepOpening(dt);if(state.motion||state.demo)phase+=dt*state.speed;

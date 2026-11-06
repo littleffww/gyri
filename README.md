@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.2](https://github.com/littleffww/gyri/tree/codex/gyri-v7.2-2026-11-06) | 2026-11-06 | Full scatter-and-gather opening, shorter controls and a trilingual project introduction. |
 | [Gyri v7.1](https://github.com/littleffww/gyri/tree/codex/gyri-v7.1-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7.1-2026-11-06) | 2026-11-06 | Adds a one-time, ten-second opening dissolve from 0 to 100%; visitors can take over immediately. |
 | [Gyri v7](https://github.com/littleffww/gyri/tree/codex/gyri-v7-public-2026-11-06) · [tag](https://github.com/littleffww/gyri/releases/tag/gyri-v7-public-2026-11-06) | 2026-11-06 | Full preserved project snapshot; exact v7 website assets, with public hosting documentation. |
 
@@ -20,7 +21,7 @@ An AcrossRCA interaction study about retaining authorship while talking with AI.
 
 ## Current experience
 
-After the model loads, the opening demonstration slowly increases dispersion from 0 to 100% over ten visible seconds. It runs once per page load, pauses while the page is hidden, and stops immediately on interaction. Completion provides a short next-step hint in Chinese, Japanese and English. Reduced-motion preferences skip the automatic demonstration.
+After loading, the sculpture disperses over ten seconds, holds for 1.5 seconds, then gathers over ten seconds. Visitors can take control at any point. Reduced-motion preferences skip the opening. The introduction and controls are available in Chinese, Japanese and English.
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 
