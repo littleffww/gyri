@@ -1,12 +1,12 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
-import {createParticles} from './particles.mjs?v=front-v7.8';
-import './languages.mjs?v=details-v7.9';
+import {createParticles} from './particles.mjs?v=restore-v7.12';
+import './languages.mjs?v=restore-v7.12';
 import {connectVoiceButton} from './sculpture-voice.mjs?v=details-v7.9';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
 import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbody.mjs?v=agency-final';
-import {createGallery} from './gallery.mjs?v=frontlight-v7.11';
+import {createGallery} from './gallery.mjs?v=reflect-v7.10';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
 const $=id=>document.getElementById(id),all=s=>[...document.querySelectorAll(s)];
 const defaults={mode:'manual',look:'quiet',reactivity:.85,memory:.6,roomColor:false,shape:'inflate',spread:.7,scale:1,rotation:0,roll:0,demo:false,frozen:false,motion:!matchMedia('(prefers-reduced-motion: reduce)').matches,speed:1,palette:'mint',elastic:true};
@@ -58,7 +58,7 @@ function unlockVoice(event) {
 }
 for (const type of ['click', 'keydown']) document.addEventListener(type, unlockVoice, {capture:true});
 function stopOpening(event) {
- if (event?.target.closest?.('#voiceSwitch, .languages, #freeze, #conceptOpen, #concept') || event?.code === 'Space') return;
+ if (event?.target.closest?.('#voiceSwitch, .languages, #freeze, #reset, #conceptOpen, #concept') || event?.code === 'Space') return;
  if (event?.type === 'pointerdown' && event.target.closest?.('#stage')) return;
  openingPending = false;
  if (!openingActive) return;
@@ -95,7 +95,19 @@ function stepOpening(dt) {
 }
 for(const type of ['pointerdown','wheel','input'])document.addEventListener(type,stopOpening,{capture:true,passive:true});
 document.addEventListener('keydown',e=>{if(!['Tab','Shift','Control','Alt','Meta'].includes(e.key))stopOpening(e)},{capture:true});
-function toast(t){$('toast').textContent=t;$('toast').hidden=false;clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').hidden=true,2200)}
+function toast(message) {
+ const caption = $('toast');
+ clearTimeout(toastTimer);
+ caption.getAnimations().forEach(animation => animation.cancel());
+ caption.textContent = message;
+ caption.hidden = false;
+ if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+  caption.animate([
+   {opacity: 0}, {opacity: 1, offset: .14}, {opacity: 1, offset: .74}, {opacity: 0}
+  ], {duration: 2000, easing: 'ease-in-out', fill: 'forwards'});
+ }
+ toastTimer = setTimeout(() => { caption.hidden = true; }, 2000);
+}
 function describeShape(shape){state.shape=shape;}
 function clearTargets(){field.clear();for(const key in targets)targets[key]=0;pullOrigin=null;previousRaw=null;}
 function poseLabel(label){const readout=$('poseName');readout.hidden=state.mode==='manual';readout.textContent=label;}
@@ -109,7 +121,15 @@ const {material,uniforms,depthMaterial}=makeSoftMaterial();
 const marker=new THREE.Mesh(new THREE.SphereGeometry(.028,12,8),new THREE.MeshBasicMaterial({color:'#333333',transparent:true,opacity:.6,depthTest:false}));const markerMaterial=marker.material;root.add(marker);marker.visible=false;marker.renderOrder=10;
 function layout(){camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);const mobile=innerWidth<=760;camera.position.set(0,mobile?1.5:1.7,mobile?17:10.3);const width=2*Math.tan(THREE.MathUtils.degToRad(18))*camera.position.z*camera.aspect;root.position.set(mobile?.35:-width*.035,mobile?1.35:-.09,0);camera.position.set(root.position.x,root.position.y,camera.position.z);
 camera.lookAt(root.position);const height=width/camera.aspect;
-camera.setViewOffset(innerWidth,innerHeight,-root.position.x/width*innerWidth,(root.position.y-(mobile?.35:-.15))/height*innerHeight,innerWidth,innerHeight);gallery.update(root.position.x,root.position.y)}layout();addEventListener('resize',layout);
+camera.setViewOffset(innerWidth,innerHeight,-root.position.x/width*innerWidth,(root.position.y-(mobile?.35:-.15))/height*innerHeight,innerWidth,innerHeight);gallery.update(root.position.x,root.position.y);
+ camera.updateMatrixWorld();
+ const crown = root.position.clone();
+ crown.y += 1.8;
+ crown.project(camera);
+ const caption = $('toast');
+ caption.style.left = ((crown.x + 1) * .5 * innerWidth) + 'px';
+ caption.style.top = Math.max(44, (1 - crown.y) * .5 * innerHeight - 12) + 'px';
+}layout();addEventListener('resize',layout);
 const sensors=new Sensors($('video'),message=>{if(!sensors.kind&&!sensors.starting)clearTargets();status(message);syncSensorUI()});
 function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual=state.mode==='manual';$('sensorStart').hidden=manual||active||busy;$('sensorStart').textContent=state.mode==='audio'?'开启麦克风':'开启摄像头';$('sensorStop').hidden=!active&&!busy;$('sensorStop').textContent=busy?'取消启动':'停止'+(state.mode==='audio'?'麦克风':'摄像头');$('videoBox').hidden=!active||state.mode==='audio';$('eyeControls').hidden=state.mode!=='eye';$('audioControls').hidden=state.mode!=='audio';$('calibrate').disabled=sensors.kind!=='eye';}
 function updateControls(){$('voiceSwitch').disabled=state.mode==='audio';for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
@@ -207,7 +227,44 @@ concept.addEventListener('click', event => {
  if (pressedBackdrop && onBackdrop(event)) closeConcept();
  pressedBackdrop = false;
 });
-function reset(){voice.off();clearPersonalTrace();particleAmount=0;particleHold=false;particleBurst=0;particles?.setForm('original');$('particleRange').value=0;all('[data-form]').forEach(b=>b.setAttribute('aria-pressed',String(b.dataset.form==='original')));clearTimeout(toastTimer);$('toast').hidden=true;selectMode('manual');Object.assign(state,defaults);voice.setPaused(false);field.reset();routes=defaultRoutes();renderRoutes();$('roomColor').checked=false;setLook('quiet');for(const k in current){current[k]=0;velocity[k]=0}clearTargets();smoothDelta.set(0,0,0);phase=0;pulseAge=99;trace=0;material.wireframe=false;$('wire').checked=false;$('base').checked=false;if(baseMesh)baseMesh.visible=false;$('space').checked=true;gallery.setVisible(true);$('keepOnRelease').checked=true;$('elastic').checked=true;$('blinkEnabled').checked=true;$('sensitivity').value=1.5;$('sensitivityValue').textContent='1.5×';describeShape('inflate');palette('mint');updateControls();status('已恢复原形，摄像头和麦克风均已关闭。')}
+function reset() {
+ stopOpening();
+ press = null;
+ drag = dragPull = false;
+ particleAmount = particleBurst = 0;
+ particleHold = false;
+ clearPersonalTrace();
+ particles?.reset();
+ $('particleRange').value = 0;
+ for (const button of all('[data-form]')) {
+  button.setAttribute('aria-pressed', String(button.dataset.form === 'original'));
+ }
+ selectMode('manual');
+ Object.assign(state, defaults);
+ voice.setPaused(false);
+ root.rotation.set(0, defaults.rotation, 0);
+ root.scale.setScalar(defaults.scale);
+ field.reset();
+ routes = defaultRoutes();
+ renderRoutes();
+ for (const key in current) { current[key] = 0; velocity[key] = 0; }
+ clearTargets();
+ smoothDelta.set(0, 0, 0);
+ phase = trace = 0;
+ pulseAge = 99;
+ material.wireframe = false;
+ if (baseMesh) baseMesh.visible = false;
+ gallery.setVisible(true);
+ for (const id of ['wire', 'base', 'roomColor']) $(id).checked = false;
+ for (const id of ['space', 'keepOnRelease', 'elastic', 'blinkEnabled']) $(id).checked = true;
+ $('sensitivity').value = 1.5;
+ $('sensitivityValue').textContent = '1.5×';
+ setLook(defaults.look);
+ describeShape(defaults.shape);
+ palette(defaults.palette);
+ updateControls();
+ toast('已恢复原状');
+}
 $('reset').onclick=reset;$('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('当前浏览器不支持全屏')}};
 $('snapshot').onclick=()=>{if(!ready)return;renderer.render(scene,camera);renderer.domElement.toBlob(blob=>{if(!blob){toast('保存失败，请重试');return}const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=`Gyri-UNSMOOTH-${Date.now()}.png`;a.click();setTimeout(()=>URL.revokeObjectURL(url),10000);toast('已保存场景，不包含摄像头画面')},'image/png')};
 let drag=false,dragPull=false,px=0,py=0,mouseOrigin=null;

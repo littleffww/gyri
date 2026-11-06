@@ -219,7 +219,20 @@ button:focus-visible,a:focus-visible,summary:focus-visible,input:focus-visible{o
 .dock-buttons{border:0;gap:19px;padding:0}.dock-buttons button{width:57px;border-bottom:1px solid transparent}.dock-buttons button.selected{border-bottom-color:#333}.shape-dock{gap:8px;bottom:45px}
 .languages{display:flex;align-items:center;gap:8px;white-space:nowrap}.languages span{font-size:10px;color:#bbb}.languages button{color:#999;font-size:11px;min-width:24px;position:relative}.languages button[aria-pressed=true]{color:#111}.languages button[aria-pressed=true]:after{content:'';height:1px;position:absolute;left:5px;right:5px;bottom:3px;background:#111}
 .intro{top:132px}.intro h1{font-size:34px;font-weight:350;letter-spacing:3px;max-width:240px}.intro>p:last-child{max-width:220px;line-height:1.9}.work-caption{bottom:150px}.edition{letter-spacing:1px;font-size:10px}.look-caption{display:none}.gesture-readout{border:0;padding-top:0}
-#toast{background:none;border:0;box-shadow:none;color:#222;top:78px;max-width:500px;font-size:11px}
+#toast {
+  background: none;
+  border: 0;
+  box-shadow: none;
+  color: #757575;
+  padding: 0;
+  font-size: 11px;
+  font-weight: 350;
+  line-height: 1.5;
+  width: max-content;
+  max-width: min(72vw, 380px);
+  transform: translate(-50%, -100%);
+  pointer-events: none;
+}
 dialog{border:0;border-radius:0;background:#f7f7f7;color:#333;box-shadow:none;width:min(590px,calc(100vw - 40px));padding:45px}dialog::backdrop{background:#ffffffb3;backdrop-filter:blur(8px)}#conceptClose{color:#444}
 @media(max-width:1100px) and (min-width:761px){.panel{right:25px;width:220px}.intro h1{font-size:28px}.intro>p:last-child{max-width:190px}.dock-buttons{gap:7px}.work-caption{width:180px}}
 @media(max-width:760px){header{left:20px;right:20px}.header-actions{gap:14px}.header-actions button{font-size:10px}.languages{gap:3px}.languages button{min-width:20px}.intro{top:87px;left:22px}.intro h1{font-size:25px;margin-bottom:7px;max-width:200px}.intro>p:last-child{font-size:10px;max-width:220px}.work-caption{top:187px;width:145px}.panel{top:auto;left:22px;right:22px;bottom:86px;width:auto;max-height:29dvh;padding:0 4px 8px 0;background:none;border:0;backdrop-filter:none}.paneltop{margin-bottom:12px}.dock-buttons{gap:13px}.dock-buttons button{width:48px}.shape-dock{bottom:16px}.agency{padding-top:10px}.brand span{display:none}html[lang=en] .intro h1{font-size:24px}html[lang=en] .work-caption{width:165px}.languages button{padding:8px 0}dialog{padding:35px 27px}}

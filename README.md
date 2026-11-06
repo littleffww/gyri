@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.12](https://github.com/littleffww/gyri/tree/codex/gyri-v7.12-2026-11-06) | 2026-11-06 | Restores the angled studio lighting, centers softer feedback above the sculpture and puts one-click restoration beside Gather. |
 | [Gyri v7.11](https://github.com/littleffww/gyri/tree/codex/gyri-v7.11-2026-11-06) | 2026-11-06 | A centered front light and matching studio reflection illuminate the sculpture from the viewer’s side. |
 | [Gyri v7.10](https://github.com/littleffww/gyri/tree/codex/gyri-v7.10-2026-11-06) | 2026-11-06 | Softer reflected light on the upper and central folds in the front view. |
 | [Gyri v7.9](https://github.com/littleffww/gyri/tree/codex/gyri-v7.9-2026-11-06) | 2026-11-06 | A first-visit voice cue and a gently animated About dialog. |
