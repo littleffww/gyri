@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.13](https://github.com/littleffww/gyri/tree/codex/gyri-v7.13-2026-11-06) | 2026-11-06 | Drag to rotate by default. Select a shaping tool to deform, or choose Rotate to inspect the result. |
 | [Gyri v7.12](https://github.com/littleffww/gyri/tree/codex/gyri-v7.12-2026-11-06) | 2026-11-06 | Restores the angled studio lighting, centers softer feedback above the sculpture and puts one-click restoration beside Gather. |
 | [Gyri v7.11](https://github.com/littleffww/gyri/tree/codex/gyri-v7.11-2026-11-06) | 2026-11-06 | A centered front light and matching studio reflection illuminate the sculpture from the viewer’s side. |
 | [Gyri v7.10](https://github.com/littleffww/gyri/tree/codex/gyri-v7.10-2026-11-06) | 2026-11-06 | Softer reflected light on the upper and central folds in the front view. |
@@ -36,8 +37,8 @@ The opening faces the viewer: ten seconds to disperse, two seconds fully dispers
 
 A monochrome, empty stage with silver material, neutral studio reflections and an optional ground shadow. All control panels and the gesture dock have transparent backgrounds. Chinese, Japanese and English are selectable through a small text navigation; the language preference is stored locally. Colour and material experiments remain available in a collapsed section.
 
-- Drag to deform the selected shape. Shift-drag pulls a local region; Alt-drag rotates; wheel scales. Holding the pointer still for 650 ms starts progressive surface disintegration. Moving or releasing gathers the points again.
-- Five labelled simulations demonstrate inflation, compression, stretching, twisting and local pulling. Keyboard 1–5 selects these; K keeps the current shape, R resets, Space pauses and Escape releases.
+- Drag horizontally to turn and vertically to tilt. Select a deformation tool to shape on drag, or select Rotate to inspect again. The wheel scales the sculpture. Holding the pointer still for 650 ms starts progressive surface disintegration. Moving or releasing gathers the points again.
+- The five shaping tools control inflation, compression, stretching, twisting and local pulling. Keyboard 1–5 selects these; K keeps the current shape, R resets, Space pauses and Escape releases.
 - **Keep this moment** captures actual deformed vertex positions in a separate trace attribute. With **Keep changes on release** enabled, releasing a pointer deformation or leaving hand tracking captures it automatically. Original mesh positions remain immutable. Traces last for the current page session, not across reloads.
 - **Accept the suggestion** blends this trace towards the preset source form and reduces live deformation. Withdrawing the suggestion restores the trace. The preset is explicitly not presented as more correct. A deliberate new capture replaces the previous trace; Clear and Reset remove it.
 - 42,000 seeded area-weighted triangle samples share the solid's deformation uniforms and a spatial/part-based dissolve threshold. Pieces granulate before their points leave the surface; the material is never globally faded out. Shadow fragments use the same threshold. Point samples retain barycentric coordinates so saved personal traces transfer to precisely the same source triangles.
