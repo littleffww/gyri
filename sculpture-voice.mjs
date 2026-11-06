@@ -93,9 +93,15 @@ export function connectVoiceButton(button, reportError) {
   let session = null;
   let recording = null;
   let enabled = true;
+  function waiting() {
+    return enabled && !!session && session.context.state !== 'running';
+  }
   function syncButton() {
-    button.setAttribute('aria-pressed', String(enabled));
-    button.textContent = enabled ? '关闭作品人声' : '开启作品人声';
+    const audible = enabled && !!session?.voice && !waiting();
+    button.setAttribute('aria-pressed', String(audible));
+    button.dataset.sound = audible ? 'on' : 'off';
+    button.textContent = !enabled ? '开启作品人声' : waiting() ? '轻点开启人声' :
+      audible ? '关闭作品人声' : '正在载入人声…';
   }
   syncButton();
   function off() {
@@ -115,9 +121,10 @@ export function connectVoiceButton(button, reportError) {
       const Context = window.AudioContext || window.webkitAudioContext;
       current = {context: new Context(), abort: new AbortController()};
       session = current;
-      button.setAttribute('aria-pressed', 'true');
-      button.textContent = '正在载入人声…';
-      await current.context.resume();
+      current.context.onstatechange = () => { if (session === current) syncButton(); };
+      syncButton();
+      resume();
+
       if (!recording) {
         const response = await fetch(new URL('./audio/human-voice.m4a', import.meta.url), {signal: current.abort.signal});
         if (!response.ok) throw Error('Voice unavailable');
@@ -127,18 +134,23 @@ export function connectVoiceButton(button, reportError) {
       }
       if (session !== current) return;
       current.voice = new SculptureVoice(current.context, recording);
-      button.textContent = '关闭作品人声';
+      syncButton();
     } catch {
       if (current && session !== current) return;
       off();
       reportError('人声载入失败，点击可重试。');
     }
   }
+  function resume() {
+    if (waiting()) session.context.resume().catch(() => {});
+  }
   button.onclick = () => {
+    if (waiting()) { resume(); return; }
     if (enabled) return off();
     enabled = true;
     syncButton();
     start();
   };
-  return {start, off, get loading() { return !!session && !session.voice; }, get active() { return session?.voice; }};
+  return {start, off, resume, get waiting() { return waiting(); },
+    get active() { return session?.context.state === 'running' ? session.voice : null; }};
 }

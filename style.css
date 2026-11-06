@@ -290,5 +290,16 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
   html:lang(en) .intro > p:last-child { font-size: 13px; }
 }
 
-.voice-switch { margin: 12px 0 0; padding: 4px 0; color: var(--ink); font-size: 12px; text-decoration: underline; text-underline-offset: 4px; text-decoration-color: var(--line); }
-.voice-switch[aria-pressed="true"] { text-decoration-color: currentColor; }
+.voice-switch {
+  display: inline-flex; align-items: center; gap: 7px;
+  margin-top: 9px; padding: 6px 0; min-height: 32px;
+  color: var(--ink); font-size: 12px;
+}
+.voice-switch::before {
+  content: ''; width: 16px; height: 16px; flex: none;
+  background: currentColor;
+  mask: var(--voice-symbol) center / contain no-repeat;
+  -webkit-mask: var(--voice-symbol) center / contain no-repeat;
+}
+.voice-switch { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22M16%209a4%204%200%200%201%200%206m2-9a8%208%200%200%201%200%2012%22/%3E%3C/svg%3E"); }
+.voice-switch[data-sound="off"] { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22m16%209%206%206m0-6-6%206%22/%3E%3C/svg%3E"); }
