@@ -303,3 +303,25 @@ html:lang(en) :is(.tabs button, .instructions, .actions button, summary) { font-
 }
 .voice-switch { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22M16%209a4%204%200%200%201%200%206m2-9a8%208%200%200%201%200%2012%22/%3E%3C/svg%3E"); }
 .voice-switch[data-sound="off"] { --voice-symbol: url("data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A//www.w3.org/2000/svg%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22black%22%20stroke-width%3D%221.7%22%20stroke-linecap%3D%22round%22%20stroke-linejoin%3D%22round%22%3E%3Cpath%20d%3D%22M3%209h4l5-4v14l-5-4H3z%22/%3E%3Cpath%20d%3D%22m16%209%206%206m0-6-6%206%22/%3E%3C/svg%3E"); }
+
+#concept[open] {
+  opacity: 0;
+  transform: translateY(9px);
+  transition: opacity 180ms ease-in, transform 200ms cubic-bezier(.4, 0, .7, 1);
+}
+#concept[open].revealed {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 240ms ease-out, transform 310ms cubic-bezier(.2, .75, .25, 1);
+}
+#concept::backdrop {
+  opacity: 0;
+  transition: opacity 180ms ease-in;
+}
+#concept.revealed::backdrop {
+  opacity: 1;
+  transition: opacity 240ms ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  #concept[open], #concept[open]::backdrop { transition: none !important; transform: none !important; }
+}

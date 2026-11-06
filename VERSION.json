@@ -1,12 +1,12 @@
 {
-  "name": "Gyri v7.8",
+  "name": "Gyri v7.9",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
   "source_commit": "638a2107e19576b00d83efca5169f80bf094ea65",
   "site_version": 7,
   "site_version_id": "appgprj_6aebcc4425f08191bdebfd5509e39808~appgver_f5c8fce15a888191be280eb59938fb09",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7.8-2026-11-06",
-  "snapshot_tag": "gyri-v7.8-2026-11-06",
-  "note": "Front-facing opening with synchronized voice, two seconds at full dispersion, tap to pause or resume, and independent mute."
+  "snapshot_branch": "codex/gyri-v7.9-2026-11-06",
+  "snapshot_tag": "gyri-v7.9-2026-11-06",
+  "note": "A trilingual cue for blocked audio and smooth opening and closing of the About dialog."
 }

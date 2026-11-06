@@ -98,10 +98,13 @@ export function connectVoiceButton(button, reportError) {
     return enabled && !paused && !!session && session.context.state !== 'running';
   }
   function syncButton() {
-    const audible = enabled && !!session?.voice && !waiting();
+    if (session?.context.state === 'running') session.unlocked = true;
+    const needsTap = waiting() && !session.unlocked && !!session.voice;
+    const audible = enabled && !!session?.voice && !needsTap;
+    button.dataset.needsTap = String(needsTap);
     button.setAttribute('aria-pressed', String(audible));
     button.dataset.sound = audible ? 'on' : 'off';
-    button.textContent = !enabled ? '开启作品人声' : waiting() ? '轻点开启人声' :
+    button.textContent = !enabled ? '开启作品人声' : needsTap ? '点一下听人声' :
       audible ? '关闭作品人声' : '正在载入人声…';
   }
   syncButton();
@@ -156,8 +159,17 @@ export function connectVoiceButton(button, reportError) {
     }
     syncButton();
   }
+  // A trusted press can unlock the context before its click handler runs.
+  let requestedPlayback = false;
+  function rememberIntent() { requestedPlayback = button.dataset.needsTap === 'true'; }
+  button.addEventListener('pointerdown', rememberIntent);
+  button.addEventListener('keydown', event => {
+    if (event.key === 'Enter' || event.key === ' ') rememberIntent();
+  });
   button.onclick = () => {
-    if (waiting()) { resume(); return; }
+    const unlock = requestedPlayback || (waiting() && !session.unlocked);
+    requestedPlayback = false;
+    if (unlock) { resume(); return; }
     if (enabled) return off();
     enabled = true;
     syncButton();
