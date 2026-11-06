@@ -1,0 +1,12 @@
+Gyri v7 · 2026-11-06
+
+公开链接：https://littleffww.github.io/gyri/
+无需登录。网站在服务器上运行，不需要打开你的电脑。
+
+本地预览：双击 Start-Mac.command 或 Start-Windows.bat，需要 Python 3。
+也可以运行 python3 serve.py。不要直接双击 dist/index.html。
+
+完整源文件在此文件夹中；部署内容在 dist 中。
+原始 3DM 文件未上传。相机和麦克风仅在访客主动开启对应模式时请求权限。
+固定版本分支：codex/gyri-v7-public-2026-11-06
+固定版本标签：gyri-v7-public-2026-11-06
