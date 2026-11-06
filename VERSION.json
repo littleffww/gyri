@@ -1,11 +1,11 @@
 {
-  "name": "Gyri v7.17",
+  "name": "Gyri v7.18",
   "archived_on": "2026-11-06",
   "timezone": "Europe/London",
-  "source_commit": "c1b8cd77e0a259a36c8bd45b9859f328f160afde",
-  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_922b3f39fd388191808814ec5cf81bfa",
+  "source_commit": "e13c6991c6b8fc8886b0e10a9b28f5908851d79a",
+  "site_version_id": "appgprj_6ad0a63110988191b79b70792a13f07c~appgver_ad7ff8ed62788191ac9b33e53891fb99",
   "live_url": "https://littleffww.github.io/gyri/",
-  "snapshot_branch": "codex/gyri-v7.17-2026-11-06",
-  "snapshot_tag": "gyri-v7.17-2026-11-06",
-  "note": "Standalone edition synchronized with the portfolio artwork, including four languages and AcrossRCA credits."
+  "snapshot_branch": "codex/gyri-v7.18-2026-11-06",
+  "snapshot_tag": "gyri-v7.18-2026-11-06",
+  "note": "Mobile media playback route, reliable tap-to-hear and audio interruption recovery."
 }

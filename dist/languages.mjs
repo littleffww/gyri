@@ -311,6 +311,7 @@ Gyri 探索人在与 AI 共同创作时如何保留自己的判断。拖动或�
 设备已关闭|Devices off|デバイスはオフ
 实时输入仍开启|Live input remains on|リアルタイム入力は継続中
 实验|experimental|実験的
+人声已暂停|Voice paused|音声は一時停止中
 已暂停|Paused|一時停止
 画面已暂停|Paused|一時停止
 已保存场景，不包含摄像头画面|Saved scene, excluding camera video|カメラ映像を含まず保存しました

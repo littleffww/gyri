@@ -6,6 +6,7 @@
 
 | Version | Date (Europe/London) | Description |
 | --- | --- | --- |
+| [Gyri v7.18](https://github.com/littleffww/gyri/tree/codex/gyri-v7.18-2026-11-06) | 2026-11-06 | Mobile media playback for the recorded voice, tap feedback at rest and recovery after audio interruptions. |
 | [Gyri v7.17](https://github.com/littleffww/gyri/tree/codex/gyri-v7.17-2026-11-06) | 2026-11-06 | Portfolio edition with four interface languages, localized project notes and AcrossRCA team credits. |
 | [Gyri v7.16](https://github.com/littleffww/gyri/tree/codex/gyri-v7.16-2026-11-06) | 2026-11-06 | Gentle self-rotation during the voiced opening, with manual control while dragging. |
 | [Gyri v7.15](https://github.com/littleffww/gyri/tree/codex/gyri-v7.15-2026-11-06) | 2026-11-06 | Gentle language fades, speaker feedback and transitions for buttons and settings. |

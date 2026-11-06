@@ -19,7 +19,9 @@ function roomResponse(context) {
 }
 
 export class SculptureVoice {
-  constructor(context, recording) {
+  constructor(context, recording, output, onFirstSound) {
+    this.onFirstSound = onFirstSound;
+    this.previewUntil = -Infinity;
     this.context = context;
     this.recording = recording;
     this.position = 0;
@@ -42,8 +44,8 @@ export class SculptureVoice {
     const room = context.createConvolver();
     room.buffer = roomResponse(context);
     this.envelope.connect(highpass).connect(this.filter);
-    this.filter.connect(this.direct).connect(context.destination);
-    this.filter.connect(this.reflection).connect(predelay).connect(room).connect(context.destination);
+    this.filter.connect(this.direct).connect(output);
+    this.filter.connect(this.reflection).connect(predelay).connect(room).connect(output);
   }
 
   update(dt, shape) {
@@ -51,12 +53,16 @@ export class SculptureVoice {
     this.previous = shape;
     if (!previous || dt <= 0) return;
     const now = this.context.currentTime;
+    if (this.previewRequested) {
+      this.previewUntil = now + 2.5;
+      this.previewRequested = false;
+    }
     const speed = (Math.abs(shape.scatter - previous.scatter) * 2.5
       + Math.abs(shape.scale - previous.scale) + Math.abs(shape.inflate - previous.inflate)
       + Math.abs(shape.stretch - previous.stretch) * 0.6 + Math.abs(shape.twist - previous.twist) * 0.45
       + Math.abs(shape.pull - previous.pull) * 0.65 + Math.abs(shape.suggestion - previous.suggestion)) / dt;
     const inOpening = Number.isFinite(shape.openingTime);
-    if (inOpening || speed > 0.026) this.lastMotion = now;
+    if (inOpening || now < this.previewUntil || speed > 0.026) this.lastMotion = now;
     const moving = now - this.lastMotion < 0.28;
     if (!this.source && !moving) return;
     if (!this.source) {
@@ -67,6 +73,8 @@ export class SculptureVoice {
       if (inOpening) this.position = shape.openingTime % this.recording.duration;
       source.start(now, this.position);
       this.source = source;
+      this.onFirstSound?.();
+      this.onFirstSound = null;
       this.lastTick = now;
     }
     this.position = (this.position + (now - this.lastTick) * this.rate) % this.recording.duration;
@@ -99,18 +107,23 @@ export function connectVoiceButton(button, reportError) {
   const label = document.createElement('span');
   button.replaceChildren(label);
   let previousLabel;
+  function requestPreview() {
+    if (!session) return;
+    if (session.voice) session.voice.previewRequested = true;
+    else session.previewPending = true;
+  }
   function waiting() {
-    return enabled && !paused && !!session && session.context.state !== 'running';
+    return enabled && !paused && !!session && (session.context.state !== 'running' || (session.player && !session.playerPlaying));
   }
   function syncButton() {
-    if (session?.context.state === 'running') session.unlocked = true;
-    const needsTap = waiting() && !session.unlocked && !!session.voice;
-    const audible = enabled && !!session?.voice && !needsTap;
+    const needsTap = enabled && !paused && !!session &&
+      (waiting() || (!!session.voice && !session.hasPlayed));
+    const audible = enabled && !paused && !!session?.voice && !needsTap;
     button.dataset.needsTap = String(needsTap);
     button.setAttribute('aria-pressed', String(audible));
     button.dataset.sound = audible ? 'on' : 'off';
-    const nextLabel = !enabled ? '开启作品人声' : needsTap ? '点一下听人声' :
-      audible ? '关闭作品人声' : '正在载入人声…';
+    const nextLabel = !enabled ? '开启作品人声' : paused ? '人声已暂停' :
+      needsTap ? '点一下听人声' : audible ? '关闭作品人声' : '正在载入人声…';
     if (previousLabel === nextLabel) return;
     label.textContent = nextLabel;
     if (previousLabel && label.animate && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
@@ -127,19 +140,55 @@ export function connectVoiceButton(button, reportError) {
     syncButton();
     if (old) {
       old.abort.abort();
+      if (old.player) {
+        old.player.pause();
+        old.player.srcObject = null;
+        old.mediaOutput.stream.getTracks().forEach(track => track.stop());
+      }
+      if (old.restoreType !== undefined) {
+        try { navigator.audioSession.type = old.restoreType; } catch {}
+      }
       old.context.close().catch(() => {});
     }
   }
-  async function start() {
+  async function start(preview = false) {
     if (!enabled || session) return;
     let current;
     try {
       const Context = window.AudioContext || window.webkitAudioContext;
       current = {context: new Context(), abort: new AbortController()};
       session = current;
+      current.previewPending = preview;
+      // WebKit's ambient audio route obeys the iPhone silent switch.
+      let mediaRoute = false;
+      try {
+        if (navigator.audioSession) {
+          current.restoreType = navigator.audioSession.type;
+          navigator.audioSession.type = 'playback';
+          mediaRoute = navigator.audioSession.type === 'playback';
+        }
+      } catch {}
+      const appleTouch = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+        (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+      if (appleTouch && !mediaRoute) {
+        current.mediaOutput = current.context.createMediaStreamDestination();
+        const player = current.player = new Audio();
+        player.setAttribute('playsinline', '');
+        player.srcObject = current.mediaOutput.stream;
+        player.onplaying = () => {
+          if (session !== current) return;
+          current.playerPlaying = true;
+          syncButton();
+        };
+        player.onpause = player.onwaiting = () => {
+          if (session !== current) return;
+          current.playerPlaying = false;
+          syncButton();
+        };
+      }
       current.context.onstatechange = () => { if (session === current) syncButton(); };
       syncButton();
-      resume();
+      resume(false);
 
       if (!recording) {
         const response = await fetch(new URL('./audio/human-voice.m4a', import.meta.url), {signal: current.abort.signal});
@@ -149,7 +198,12 @@ export function connectVoiceButton(button, reportError) {
         recording = audio;
       }
       if (session !== current) return;
-      current.voice = new SculptureVoice(current.context, recording);
+      current.voice = new SculptureVoice(current.context, recording,
+        current.mediaOutput || current.context.destination, () => {
+          current.hasPlayed = true;
+          syncButton();
+        });
+      if (current.previewPending) requestPreview();
       syncButton();
     } catch {
       if (current && session !== current) return;
@@ -157,17 +211,25 @@ export function connectVoiceButton(button, reportError) {
       reportError('人声载入失败，点击可重试。');
     }
   }
-  function resume() {
-    if (waiting()) session.context.resume().catch(() => {});
+  function resume(preview = true) {
+    if (!session || !enabled || paused) return;
+    if (preview) requestPreview();
+    const {context, player} = session;
+    // Both requests must be made inside the tap, before any await.
+    if (context.state !== 'running') context.resume().catch(syncButton);
+    if (player && !session.playerPlaying) player.play().catch(syncButton);
   }
   function setPaused(value) {
     if (paused === value) return;
     paused = value;
     if (session && enabled) {
-      // Queue both transitions, even if the previous statechange is still pending.
-      const ctx = session.context;
-      if (paused) ctx.suspend().catch(() => {});
-      else ctx.resume().catch(() => {});
+      if (paused) {
+        session.player?.pause();
+        session.context.suspend().catch(syncButton);
+      } else {
+        session.context.resume().catch(syncButton);
+        resume(false);
+      }
     }
     syncButton();
   }
@@ -179,14 +241,14 @@ export function connectVoiceButton(button, reportError) {
     if (event.key === 'Enter' || event.key === ' ') rememberIntent();
   });
   button.onclick = () => {
-    const unlock = requestedPlayback || (waiting() && !session.unlocked);
+    const unlock = requestedPlayback || button.dataset.needsTap === 'true';
     requestedPlayback = false;
     if (unlock) { resume(); return; }
     if (enabled) return off();
     enabled = true;
     syncButton();
-    start();
+    start(true);
   };
   return {start, off, resume, setPaused, get waiting() { return waiting(); },
-    get active() { return !paused && session?.context.state === 'running' ? session.voice : null; }};
+    get active() { return enabled && !paused && session && !waiting() ? session.voice : null; }};
 }

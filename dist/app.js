@@ -1,7 +1,7 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
 import {createParticles} from './particles.mjs?v=restore-v7.12';
-import './languages.mjs?v=gyri-hant';
-import {connectVoiceButton} from './sculpture-voice.mjs?v=fade-v7.15';
+import './languages.mjs?v=mobile-v7.18';
+import {connectVoiceButton} from './sculpture-voice.mjs?v=mobile-v7.18';
 import * as THREE from './vendor/three.module.js';
 import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
 import {Sensors} from './sensors.mjs?v=agency-final';
