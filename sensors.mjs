@@ -22,6 +22,7 @@ export class Sensors {
     this.kind=null; this.starting=false; this.epoch=0; this.abort=null; this.tasks={}; this.lastVideo=-1; this.lastFrame=0;
   }
   stop() {
+    this.linkRequest = (this.linkRequest || 0) + 1; this.handTracker = null;
     this.epoch++; this.abort?.abort(); this.abort=null;
     this.stream?.getTracks().forEach(t=>t.stop()); this.stream=null;
     if(this.context) this.context.close().catch(()=>{});
@@ -79,10 +80,23 @@ export class Sensors {
       return false;
     }
   }
+  async linkHand(enabled) {
+    const request = ++this.linkRequest;
+    this.handTracker = null;
+    if (!enabled || this.kind !== 'eye') return;
+    try {
+      const task = await this.task('hand');
+      if (request === this.linkRequest && this.kind === 'eye') this.handTracker = task;
+    } catch (error) {
+      if (request === this.linkRequest) throw error;
+    }
+  }
   frame(now) {
-    if(!this.kind||this.kind==='audio'||this.video.readyState<2||now-this.lastFrame<80||this.video.currentTime===this.lastVideo)return null;
+    if(!this.kind||this.kind==='audio'||this.video.readyState<2||now-this.lastFrame<(this.handTracker ? 120 : 80)||this.video.currentTime===this.lastVideo)return null;
     this.lastFrame=now;this.lastVideo=this.video.currentTime;
-    return this.tracker.detectForVideo(this.video,now);
+    const result = this.tracker.detectForVideo(this.video,now);
+    if (this.handTracker) result.linkedHands = this.handTracker.detectForVideo(this.video,now).landmarks;
+    return result;
   }
   frequency(){if(!this.analyser)return null;this.analyser.getByteFrequencyData(this.spectrum);return {bins:this.spectrum,sampleRate:this.context.sampleRate,minDb:this.analyser.minDecibels,maxDb:this.analyser.maxDecibels};}
   audio(){if(!this.analyser)return null;this.analyser.getFloatTimeDomainData(this.samples);return this.samples;}

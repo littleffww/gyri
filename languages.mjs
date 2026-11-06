@@ -1,5 +1,14 @@
-import {traditional} from './traditional.mjs';
+import {traditional} from './traditional.mjs?v=linked-720';
 const rows=`
+双手拉开可拉伸；反向倾斜手腕可拧转。两手各自捏住，改变间距可缩放。|Spread both hands to stretch. Tilt your wrists in opposite directions to twist. Pinch with both hands and change the gap to resize.|両手を広げると伸び、両手首を逆向きに傾けるとねじれます。両手でつまんだまま間隔を変えると拡大・縮小できます。
+校准后左右看可拧转，轻轻歪头可倾斜雕塑。开启手眼联动后，左右看选区域，手的高低选位置；捏住拖动。|Calibrate, then look sideways to twist or tilt your head to lean the sculpture. With gaze and hand linked, look left or right and raise or lower your hand to aim. Pinch and drag to pull.|調整後、左右を見るとねじれ、首を傾けると彫刻も傾きます。視線と手を連動させると、視線で左右、手の高さで上下を選べます。つまんで引いてください。
+手眼联动|Link gaze and hand|視線と手を連動
+双腕 · 反向拧转|Wrists · twist|両手首でねじる
+双手捏合 · 缩放|Two pinches · resize|両手でつまんで拡大・縮小
+目光定位 · 捏住牵引|Aim with gaze · pinch to pull|視線で選び、つまんで引く
+手眼联动 · 牵引中|Gaze and hand · pulling|視線と手で引いています
+请把一只手移入镜头|Bring one hand into view|片手をカメラに映してください
+手部追踪未能开启，仍可使用目光。|Hand tracking could not start. Gaze control is still available.|手の追跡を開始できませんでした。視線操作は引き続き使えます。
 夜览|Night view|夜間表示
 3D 模型提供 · Yasmina|3D model provided by Yasmina|3Dモデル提供 · Yasmina
 AcrossRCA 小组 ·|AcrossRCA team ·|AcrossRCA チーム ·

@@ -43,6 +43,23 @@ export function createParticles(geometry,root,shared=makeSoftMaterial().uniforms
  }
  return {
  setColors,
+ beginReturn() {
+  const weights = formWeights.clone();
+  const scatter = s;
+  const dissolved = shared.uDissolve.value;
+  const original = new T.Vector4(1, 0, 0, 0);
+  form = 'original';
+  migrating = false;
+  return progress => {
+   // Move samples home first, then reveal their own triangles along the dissolve mask.
+   const travel = T.MathUtils.smootherstep(progress, 0, weights.x < .99 ? .78 : 1);
+   const reveal = T.MathUtils.smootherstep(progress, weights.x < .99 ? .34 : 0, 1);
+   formWeights.lerpVectors(weights, original, travel);
+   s = uniforms.scatter.value = scatter * (1 - travel);
+   shared.uDissolve.value = dissolved * (1 - reveal);
+   points.visible = shared.uDissolve.value > .005;
+  };
+ },
  reset() {
   form = 'original';
   migrating = false;

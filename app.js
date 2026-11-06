@@ -1,10 +1,10 @@
 import {captureTrace} from './identity.mjs?v=agency-final';
-import {createParticles} from './particles.mjs?v=night-719';
-import './languages.mjs?v=night-719';
+import {createParticles} from './particles.mjs?v=restore-720';
+import './languages.mjs?v=linked-720';
 import {connectVoiceButton} from './sculpture-voice.mjs?v=mobile-v7.18';
 import * as THREE from './vendor/three.module.js';
-import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=agency-final';
-import {Sensors} from './sensors.mjs?v=agency-final';
+import {clamp,bodyGesture,handMetrics,StablePose,BlinkTrigger,irisRatio,audioLevel,RisingBeat,blend} from './interactions.mjs?v=linked-720';
+import {Sensors} from './sensors.mjs?v=linked-720';
 import {makeSoftMaterial,loadSoftGeometry,springStep,deformPoint} from './softbody.mjs?v=agency-final';
 import {createGallery} from './gallery.mjs?v=night-719';
 import {LOOKS,CHANNELS,SOURCE_LABELS,defaultRoutes,ResponseField,mapResponse,spectralPosition} from './response.mjs?v=agency-final';
@@ -37,7 +37,7 @@ const shapes={
 };
 const modes = {
  manual: {badge: '鼠标', guide: '拖动旋转，轻点暂停。选下方工具后，拖动即可塑形。'},
- hand: {badge: '手势', guide: '张掌膨胀，握拳压缩。双手拉伸，捏合牵引。'},
+ hand: {badge: '手势', guide: '双手拉开可拉伸；反向倾斜手腕可拧转。两手各自捏住，改变间距可缩放。'},
  eye: {badge: '目光', guide: '看向中央校准，再左右看。眨眼释放粒子。'},
  audio: {badge: '声音', guide: '对着麦克风轻声哼唱，或拍手释放粒子。'}
 };
@@ -197,7 +197,7 @@ function syncSensorUI(){const active=!!sensors.kind,busy=sensors.starting,manual
 function updateControls(){$('voiceSwitch').disabled=state.mode==='audio';for(const id of ['spread','scale','speed','reactivity','memory'])$(id).value=state[id];$('reactivityValue').textContent=Math.round(state.reactivity*100)+'%';$('memoryValue').textContent=state.memory.toFixed(1)+'×';$('spreadValue').textContent=Math.round(state.spread*100)+'%';$('scaleValue').textContent=state.scale.toFixed(2)+'×';$('speedValue').textContent=state.speed.toFixed(1)+'×';$('motion').checked=state.motion;$('demo').textContent=state.demo?'停止演示':'播放演示';$('freeze').textContent=state.frozen?'继续画面':'暂停画面';$('freeze').setAttribute('aria-pressed',String(state.frozen));document.body.classList.toggle('frozen',state.frozen);
  all('[data-shape]').forEach(b=>{const active=state.mode==='manual'&&!state.demo&&state.mouseTool===b.dataset.shape;b.classList.toggle('selected',active);b.setAttribute('aria-pressed',String(active))});
 }
-function selectMode(mode){state.mouseTool='rotate';if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio';sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
+function selectMode(mode){headZero=null;clearLink();resizeStart=null;handShapesOnly=false;state.mouseTool='rotate';if(mode==='audio')voice.off();$('voiceSwitch').disabled=mode==='audio';sensors.stop();state.mode=mode;lastAudioLevel=0;renderRoutes();state.demo=false;tracked=false;poseFilter.reset();blink.reset();gazeZero=null;calibration=null;clearTargets();$('calibrate').textContent='看向模型中央，校准目光';$('audioMeter').style.width='0%';all('.meter')[0].setAttribute('aria-valuenow','0');all('[data-mode]').forEach(b=>{const selected=b.dataset.mode===mode;b.classList.toggle('active',selected);b.setAttribute('aria-pressed',String(selected))});$('instructions').textContent=modes[mode].guide;poseLabel('等待一次触碰',mode==='manual'?'鼠标 / 模拟输入':modes[mode].badge+'未开启');status('');syncSensorUI();updateControls()}
 function selectMouseTool(tool) {
  selectMode('manual');
  state.mouseTool = tool;
@@ -234,8 +234,8 @@ $('roomColor').onchange=e=>state.roomColor=e.target.checked;
 for(const id of ['reactivity','memory'])$(id).oninput=e=>{state[id]=+e.target.value;updateControls()};
 function palette(name){state.palette=name;const p={mint:{body:'#999999',roughness:.36,metalness:.72,env:1.1},violet:{body:'#777777',roughness:.64,metalness:0,env:.24},amber:{body:'#ae7660',roughness:.83,metalness:0,env:.4}}[name];material.color.set(p.body);material.roughness=p.roughness;material.metalness=p.metalness;material.envMapIntensity=p.env;all('[data-palette]').forEach(b=>{const selected=b.dataset.palette===name;b.classList.toggle('selected',selected);b.setAttribute('aria-pressed',String(selected))})}
 all('[data-mode]').forEach(b=>b.onclick=()=>selectMode(b.dataset.mode));all('[data-shape]').forEach(b=>b.onclick=()=>{if(!watchingOpening())selectMouseTool(b.dataset.shape)});all('[data-palette]').forEach(b=>b.onclick=()=>{palette(b.dataset.palette);setLook('quiet')});
-$('sensorStart').onclick=async()=>{state.demo=false;setPaused(false);const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
-$('sensorStop').onclick=()=>{sensors.stop();release(false);tracked=false;poseFilter.reset();calibration=null;poseLabel('松手 · 缓慢回弹','设备已关闭');status('输入已关闭，模型将回弹。可以继续模拟动作。');syncSensorUI()};
+$('sensorStart').onclick=async()=>{state.demo=false;setPaused(false);const mode=state.mode,pending=sensors.start(mode);syncSensorUI();const ok=await pending;if(ok&&mode===state.mode){if(mode==='eye'&&$('linkHand').checked)void syncLink();poseFilter.reset();clearTargets();tracked=false;gazeZero=null;calibration=null;poseLabel('等待识别',modes[mode].badge+'实时输入');status(mode==='hand'?'掌心朝向镜头。先张掌，再握拳，观察表面变化。':mode==='eye'?'看向模型中央，点击校准目光。':'麦克风已开启。说话或拍手，让身体鼓胀。')}syncSensorUI()};
+$('sensorStop').onclick=()=>{clearLink();resizeStart=null;sensors.stop();release(false);tracked=false;poseFilter.reset();calibration=null;poseLabel('松手 · 缓慢回弹','设备已关闭');status('输入已关闭，模型将回弹。可以继续模拟动作。');syncSensorUI()};
 $('release').onclick=()=>{particleAmount=0;particleHold=false;particleBurst=0;$('particleRange').value=0;release()};
 function savePersonalTrace(announce=true){
  if(!sculpture||state.frozen)return;
@@ -304,22 +304,37 @@ concept.addEventListener('click', event => {
  if (pressedBackdrop && onBackdrop(event)) closeConcept();
  pressedBackdrop = false;
 });
+let restoration = null;
+const restRotation = new THREE.Quaternion();
+function restoreControls(locked) {
+ for (const el of document.querySelectorAll('.panel > :not(#voiceSwitch), .shape-dock')) el.inert = locked;
+}
 function reset() {
+ if (restoration || !ready || watchingOpening()) return;
+ const start = {
+  deformation: {...current, grip: uniforms.uGrip.value / defaults.spread},
+  traceWeight: uniforms.uTraceAmount.value, delta: smoothDelta.clone(),
+  rotation: root.quaternion.clone(), scale: root.scale.x,
+  returnParticles: particles.beginReturn(), dissolve: uniforms.uDissolve.value,
+  elapsed: 0, materialColor: material.color.clone(), art: uniforms.uArtMix.value,
+  pigments: ['uPigmentA','uPigmentB','uPigmentC'].map(key => uniforms[key].value.clone()),
+  roughness: material.roughness, metalness: material.metalness, env: material.envMapIntensity
+ };
+ start.duration = matchMedia('(prefers-reduced-motion: reduce)').matches ? .16 : .8 + start.dissolve * 1.25;
+ restoration = start;
+ restoreControls(true);
  press = null;
  drag = dragPull = false;
  particleAmount = particleBurst = 0;
  particleHold = false;
- clearPersonalTrace();
- particles?.reset();
- $('particleRange').value = 0;
+ $('particleRange').value = start.dissolve;
  for (const button of all('[data-form]')) {
   button.setAttribute('aria-pressed', String(button.dataset.form === 'original'));
  }
  selectMode('manual');
  Object.assign(state, defaults);
  voice.setPaused(false);
- root.rotation.set(0, defaults.rotation, 0);
- root.scale.setScalar(defaults.scale);
+ targetAxis.copy(uniforms.uAxis.value);
  field.reset();
  routes = defaultRoutes();
  renderRoutes();
@@ -331,14 +346,42 @@ function reset() {
  material.wireframe = false;
  if (baseMesh) baseMesh.visible = false;
  gallery.setVisible(true);
+ $('linkHand').checked = false;
  for (const id of ['wire', 'base', 'roomColor']) $(id).checked = false;
  for (const id of ['space', 'keepOnRelease', 'elastic', 'blinkEnabled']) $(id).checked = true;
  $('sensitivity').value = 1.5;
  $('sensitivityValue').textContent = '1.5×';
  setLook(defaults.look);
+ if (start.art) [uniforms.uPigmentA,uniforms.uPigmentB,uniforms.uPigmentC].forEach((u,i)=>u.value.copy(start.pigments[i]));
  describeShape(defaults.shape);
  palette(defaults.palette);
  updateControls();
+}
+function advanceRestoration(dt) {
+ const r = restoration;
+ r.elapsed += dt;
+ const progress = Math.min(1, r.elapsed / r.duration);
+ const remaining = 1 - THREE.MathUtils.smootherstep(progress, 0, 1);
+ r.returnParticles(progress);
+ $('particleRange').value = uniforms.uDissolve.value;
+ for (const key of Object.keys(current)) current[key] = r.deformation[key] * remaining;
+ uniforms.uInflate.value = current.inflate;
+ uniforms.uStretch.value = current.stretch;
+ uniforms.uTwist.value = current.twist;
+ uniforms.uGrip.value = current.grip * defaults.spread;
+ uniforms.uDelta.value.copy(r.delta);
+ uniforms.uTraceAmount.value = r.traceWeight * remaining;
+ root.quaternion.slerpQuaternions(restRotation, r.rotation, remaining);
+ root.scale.setScalar(1 + (r.scale - 1) * remaining);
+ material.color.set('#999999').lerp(r.materialColor, remaining);
+ material.roughness = THREE.MathUtils.lerp(material.roughness, r.roughness, remaining);
+ material.metalness = THREE.MathUtils.lerp(material.metalness, r.metalness, remaining);
+ material.envMapIntensity = THREE.MathUtils.lerp(material.envMapIntensity, r.env, remaining);
+ uniforms.uArtMix.value = r.art * remaining;
+ if (progress < 1) return;
+ clearPersonalTrace();
+ restoration = null;
+ restoreControls(false);
  toast('已恢复原状');
 }
 $('reset').onclick=reset;$('full').onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else await document.documentElement.requestFullscreen()}catch{toast('当前浏览器不支持全屏')}};
@@ -350,7 +393,7 @@ renderer.domElement.tabIndex = 0;
 renderer.domElement.setAttribute('aria-label', '互动雕塑');
 let press=null;
 renderer.domElement.onpointerdown=e=>{
- if(!e.isPrimary||e.button!==0||press)return;
+ if(restoration||!e.isPrimary||e.button!==0||press)return;
  if (watchingOpening()) freeTurnTime = 0;
  press={id:e.pointerId,clientX:e.clientX,clientY:e.clientY,at:performance.now(),moved:false,opening:watchingOpening()};
  renderer.domElement.setPointerCapture(e.pointerId);
@@ -416,23 +459,74 @@ renderer.domElement.onpointerup=renderer.domElement.onpointercancel=e=>{if(!pres
   return;
  }if(state.mouseTool!=='rotate'&&$('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);release(false);particleHold=false;drag=false;dragPull=false;if(e.pointerType==='touch')field.clear()};
 renderer.domElement.onpointerleave=()=>{if(!drag&&state.mode==='manual'&&!state.demo)field.clear()};
-renderer.domElement.ondblclick=()=>{if(!watchingOpening())emitPulse(true)};renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();if(watchingOpening())return;state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
-addEventListener('keydown',e=>{if(e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(watchingOpening()){
+renderer.domElement.ondblclick=()=>{if(!restoration&&!watchingOpening())emitPulse(true)};renderer.domElement.addEventListener('wheel',e=>{e.preventDefault();if(restoration||watchingOpening())return;state.scale=clamp(state.scale-e.deltaY*.001,.6,1.4);updateControls()},{passive:false});
+addEventListener('keydown',e=>{if(restoration||e.ctrlKey||e.metaKey||e.altKey||e.repeat||$('concept').open||['INPUT','BUTTON','TEXTAREA','SELECT','SUMMARY'].includes(e.target.tagName))return;if(watchingOpening()){
  if(e.code==='Space'||e.key==='Enter'){e.preventDefault();showOpeningChoice();$('openingContinue').focus({preventScroll:true})}
  return;
 }if(e.code==='Space'){e.preventDefault();$('freeze').click()}else if(e.key.toLowerCase()==='k')savePersonalTrace();else if(e.key.toLowerCase()==='r')reset();else if(e.key==='Escape')release();else if('12345'.includes(e.key)&&e.key.length===1)selectMouseTool(Object.keys(shapes)[Number(e.key)-1])});
 const canvas=$('skeleton'),ctx=canvas.getContext('2d');
 function drawHands(hands){ctx.clearRect(0,0,640,480);for(const [j,hand] of hands.entries()){ctx.strokeStyle=j?'#d6cbb5':'#d6e2c7';ctx.lineWidth=2;for(const chain of [[0,1,2,3,4],[0,5,6,7,8],[5,9,10,11,12],[9,13,14,15,16],[13,17,18,19,20],[0,17]]){ctx.beginPath();chain.forEach((i,k)=>{const p=hand[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}ctx.fillStyle='#fff';for(const p of hand){ctx.beginPath();ctx.arc(p.x*640,p.y*480,2.5,0,Math.PI*2);ctx.fill()}}}
 function drawEyes(points){ctx.clearRect(0,0,640,480);ctx.strokeStyle='#d6e2c7';ctx.lineWidth=2;for(const indexes of [[33,160,158,133,153,144,33],[362,385,387,263,373,380,362]]){ctx.beginPath();indexes.forEach((i,k)=>{const p=points[i];k?ctx.lineTo(p.x*640,p.y*480):ctx.moveTo(p.x*640,p.y*480)});ctx.stroke()}for(const i of [468,473]){const p=points[i];if(p){ctx.beginPath();ctx.arc(p.x*640,p.y*480,4,0,Math.PI*2);ctx.stroke()}}}
+let resizeStart = null;
+let handShapesOnly = false;
+let headZero = null;
+let gazePinch = null;
+let gazeAim = false;
+let requireOpenHand = true;
+const gazePoint = new THREE.Vector3();
+const screenToBody = new THREE.Quaternion();
+function clearLink() {
+ gazePinch = null;
+ gazeAim = false;
+ requireOpenHand = true;
+ targets.grip = 0;
+}
+async function syncLink() {
+ clearLink();
+ try { await sensors.linkHand($('linkHand').checked); }
+ catch { $('linkHand').checked = false; status('手部追踪未能开启，仍可使用目光。'); }
+}
+$('linkHand').onchange = syncLink;
+function gazeHand(hands, offset) {
+ const metrics = hands.length ? handMetrics([hands[0]]) : null;
+ if (!metrics) { clearLink(); return '请把一只手移入镜头'; }
+ const h = hands[0];
+ const x = 1 - (h[4].x + h[8].x) / 2, y = (h[4].y + h[8].y) / 2;
+ if (metrics.pinch > .48) {
+  if (gazePinch && $('keepOnRelease').checked && targets.grip) savePersonalTrace(false);
+  gazePinch = null;
+  requireOpenHand = false;
+ }
+ screenToBody.copy(root.quaternion).invert();
+ if (!gazePinch) {
+  gazePoint.set(clamp(-offset*4.8,-.5,.5),clamp((.5-y)*4,-1.55,1.55),.12).applyQuaternion(screenToBody);
+  grabPoint.lerp(gazePoint, gazeAim ? .5 : 1);
+  targetDelta.set(0,0,0);
+  if (!requireOpenHand && metrics.pinch < .28) gazePinch = {x,y};
+ }
+ gazeAim = true;
+ targets.grip = gazePinch ? 1 : 0;
+ if (gazePinch) targetDelta.set(clamp((x-gazePinch.x)*5,-1.5,1.5),
+  clamp((gazePinch.y-y)*5,-1.5,1.5),0).applyQuaternion(screenToBody);
+ return gazePinch ? '手眼联动 · 牵引中' : '目光定位 · 捏住牵引';
+}
 function applyHand(raw,now){
+ if (raw?.kind !== 'resize') resizeStart = null;
+ handShapesOnly = raw?.kind === 'wring' || raw?.kind === 'resize';
  const stable=poseFilter.update(raw,now);
  if(!raw){if(tracked){if($('keepOnRelease').checked&&Object.values(current).some(v=>Math.abs(v)>.005))savePersonalTrace(false);clearTargets();poseLabel('松手 · 正在回弹','没有检测到手');status('手已离开镜头，身体缓慢回弹。')}tracked=false;previousRaw=null;return}
  if(previousRaw==='pull'&&raw.kind!=='pull'){targets.grip=0;pullOrigin=null;trace=1;emitPulse(false)}previousRaw=raw.kind;
  if(!stable)return;
- if(!tracked)status('已识别。尝试张掌、握拳、双手拉开，以及捏合后移动。');tracked=true;
+ if(!tracked)status(modes.hand.guide);tracked=true;
  const g=stable,oldGrip=targets.grip;
  for(const k in targets)targets[k]=0;
  if(g.kind==='inflate'||g.kind==='compress'){targets.inflate=g.amount;describeShape(g.kind);state.rotation=g.rotation*.12}
+ if(g.kind==='wring'){targets.twist=g.amount;describeShape('twist')}
+ if(g.kind==='resize'){
+  resizeStart ||= {gap:g.gap,scale:state.scale};
+  state.scale=clamp(resizeStart.scale+(g.gap-resizeStart.gap)*1.8,.6,1.4);
+  $('scale').value=state.scale;
+ }
  if(g.kind==='stretch'){targets.stretch=g.amount;targetAxis.set(...g.axis);describeShape('stretch')}
  if(g.kind==='twist'){targets.twist=g.amount;targets.inflate=.1;describeShape('twist')}
  if(g.kind==='pull'){
@@ -440,18 +534,34 @@ function applyHand(raw,now){
   targets.grip=1;targetDelta.set(clamp((g.point.x-pullOrigin.x)*5,-1.6,1.6),clamp((pullOrigin.y-g.point.y)*5,-1.6,1.6),.15);describeShape('pull');
  }else if(g.kind==='touch'){pullOrigin=null;grabPoint.set(0,clamp((.5-g.point.y)*5,-1.6,1.6),0);targetDelta.set((g.point.x-.5)*.7,0,.75);targets.grip=.7;describeShape('pull')}
  else {pullOrigin=null;if(oldGrip>.1)trace=1}
- const names={inflate:'张掌 · 鼓胀',compress:'握拳 · 受压',stretch:'双手 · 定向拉伸',twist:'转腕 · 拧曲',pull:'捏合 · 局部牵引',touch:'食指 · 局部触碰',rest:'放松 · 回弹'};poseLabel(names[g.kind], '摄像头 · 实时手势');$('trackingLabel').textContent=names[g.kind];
+ const names={wring:'双腕 · 反向拧转',resize:'双手捏合 · 缩放',inflate:'张掌 · 鼓胀',compress:'握拳 · 受压',stretch:'双手 · 定向拉伸',twist:'转腕 · 拧曲',pull:'捏合 · 局部牵引',touch:'食指 · 局部触碰',rest:'放松 · 回弹'};poseLabel(names[g.kind], '摄像头 · 实时手势');$('trackingLabel').textContent=names[g.kind];
 }
 function trackFrame(now){const result=sensors.frame(now);if(!result)return;
  if(sensors.kind==='hand'){drawHands(result.landmarks);const raw=bodyGesture(result.landmarks);applyHand(raw,now);if(raw){const metrics=handMetrics(result.landmarks);const center=result.landmarks.reduce((sum,h)=>sum+(1-h[9].x),0)/result.landmarks.length;field.feed({position:center,energy:metrics.spread},now)}if(!raw)$('trackingLabel').textContent='没有看到手';}
  else if(sensors.kind==='eye'){
-  const face=result.faceLandmarks[0];if(!face){ctx.clearRect(0,0,640,480);blink.update(null,null,now);clearTargets();$('trackingLabel').textContent='没有看到面部';if(calibration&&now-calibration.start>6000){calibration=null;$('calibrate').textContent='重新校准目光';status('校准未完成，请改善光线后重试。')}tracked=false;return}
+  const face=result.faceLandmarks[0];if(!face){clearLink();ctx.clearRect(0,0,640,480);blink.update(null,null,now);clearTargets();$('trackingLabel').textContent='没有看到面部';if(calibration&&now-calibration.start>6000){calibration=null;$('calibrate').textContent='重新校准目光';status('校准未完成，请改善光线后重试。')}tracked=false;return}
   drawEyes(face);const scores=Object.fromEntries((result.faceBlendshapes[0]?.categories||[]).map(v=>[v.categoryName,v.score])),left=scores.eyeBlinkLeft,right=scores.eyeBlinkRight;
-  if(blink.update(left,right,now)&&$('blinkEnabled').checked&&!calibration)emitPulse();
+  if(blink.update(left,right,now)&&$('blinkEnabled').checked&&!calibration&&!gazePinch)emitPulse();
   const ratio=irisRatio(face),open=(left??1)<.3&&(right??1)<.3;
-  if(calibration){if(open&&ratio!==null&&now-calibration.start>400)calibration.values.push(ratio);if(now-calibration.start>1800&&calibration.values.length>=16){const samples=calibration.values.sort((a,b)=>a-b);gazeZero=samples[Math.floor(samples.length/2)];calibration=null;$('calibrate').textContent='重新校准目光';status('校准完成。保持头部稳定，左右看使身体扭曲。');toast('目光中心已校准')}else if(now-calibration.start>6000){calibration=null;$('calibrate').textContent='重新校准目光';status('校准未完成，请改善光线后重试。')}}
-  if(gazeZero!==null&&open&&ratio!==null){const delta=ratio-gazeZero;targets.twist=clamp(-Math.sign(delta)*Math.max(0,Math.abs(delta)-.012)*12,-1.6,1.6);field.feed({position:clamp(.5-delta*6,0,1),energy:clamp(Math.abs(delta)*10,0,1)},now);describeShape('twist');poseLabel('注视 · 轻轻拧动','摄像头 · 目光估算')}
+  const headAngle = Math.atan2(face[263].y-face[33].y,face[263].x-face[33].x);
+  if (headZero !== null && gazeZero !== null && !gazePinch) {
+   const lean = headAngle - headZero;
+   state.roll = clamp(Math.sign(lean)*Math.max(0,Math.abs(lean)-.055),-.45,.45);
+  }
+  if(calibration){if(open&&ratio!==null&&now-calibration.start>400)calibration.values.push(ratio);if(now-calibration.start>1800&&calibration.values.length>=16){const samples=calibration.values.sort((a,b)=>a-b);gazeZero=samples[Math.floor(samples.length/2)];headZero=headAngle;calibration=null;$('calibrate').textContent='重新校准目光';status('校准完成。保持头部稳定，左右看使身体扭曲。');toast('目光中心已校准')}else if(now-calibration.start>6000){calibration=null;$('calibrate').textContent='重新校准目光';status('校准未完成，请改善光线后重试。')}}
+  if(!sensors.handTracker&&gazeZero!==null&&open&&ratio!==null){const delta=ratio-gazeZero;targets.twist=clamp(-Math.sign(delta)*Math.max(0,Math.abs(delta)-.012)*12,-1.6,1.6);field.feed({position:clamp(.5-delta*6,0,1),energy:clamp(Math.abs(delta)*10,0,1)},now);describeShape('twist');poseLabel('注视 · 轻轻拧动','摄像头 · 目光估算')}
   if(!tracked&&!calibration)status(gazeZero===null?'面部已识别。看向模型中央，点击校准目光。':'面部已恢复。保持头部稳定。');tracked=true;$('trackingLabel').textContent=calibration?'正在校准':gazeZero!==null?'目光估算 · 已校准':'面部已识别 · 待校准';
+  if (sensors.handTracker) {
+   targets.twist = 0;
+   if (gazeZero !== null && ratio !== null && open && !calibration) {
+    const message = gazeHand(result.linkedHands || [], ratio - gazeZero);
+    poseLabel(message); $('trackingLabel').textContent = message;
+    field.feed({position:clamp(.5-(ratio-gazeZero)*5,0,1),energy:targets.grip},now);
+   } else if (!open && gazePinch && gazeZero !== null && !calibration) {
+    // A blink need not release the anchored fold.
+    if (!result.linkedHands?.length || handMetrics([result.linkedHands[0]]).pinch > .48) clearLink();
+   } else clearLink();
+  }
  }
 }
 function sensorTick(now){try{trackFrame(now);const samples=sensors.audio();if(samples){const level=audioLevel(samples,+$('sensitivity').value);targets.inflate=level*.9;targets.stretch=0;targets.twist=0;const frequency=sensors.frequency();field.feed({position:level>.015?spectralPosition(frequency.bins,frequency.sampleRate,frequency.minDb,frequency.maxDb):.5,energy:level,motion:clamp(Math.abs(level-lastAudioLevel)*12,0,1)},now);lastAudioLevel=level;if(beat.update(level,now))emitPulse();$('audioMeter').style.width=(level*100)+'%';all('.meter')[0].setAttribute('aria-valuenow',Math.round(level*100));describeShape('inflate');poseLabel('声音 · 体积起伏','麦克风 · 实时音量')}}catch(e){sensors.stop();clearTargets();status('识别中断，输入已关闭。可以重试或用模拟手势。');syncSensorUI();console.error(e)}}
@@ -468,19 +578,20 @@ function animate(now){requestAnimationFrame(animate);const elapsed=lastTime?(now
   particleBurst=Math.max(0,particleBurst-dt*.6);
   if(press&&!press.opening&&!drag&&now-press.at>=650){beginDrag(press);lastPointerMotion=press.at}
   particleHold=!press?.opening&&drag&&!dragPull&&(state.mouseTool!=='rotate'||!press?.moved)&&now-lastPointerMotion>650;
-  const live=sensors.kind==='hand'&&tracked?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
-  particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),particleColors(),openingActive);
+  const live=sensors.kind==='hand'&&tracked&&!handShapesOnly?field.value.energy:sensors.kind==='audio'?field.value.energy*.85:0;
+  if (restoration) advanceRestoration(dt);
+  else particles?.update(dt,Math.max(particleAmount,particleHold?1:0,particleBurst,live),particleColors(),openingActive);
   if (ready && voice.active) {
    voice.active.update(dt, {
     openingTime: openingActive ? openingElapsed : null,
-    scatter: particles.amount, scale: size, inflate: current.inflate,
+    scatter: restoration ? uniforms.uDissolve.value : particles.amount, scale: root.scale.x, inflate: current.inflate,
     stretch: current.stretch, twist: current.twist, pull: current.grip * (1 + smoothDelta.length()),
     suggestion: hasTrace ? conformity : 0
    });
   }
   if(sculpture){sculpture.visible=true;sculpture.castShadow=true;}
 
-  marker.visible=current.grip>.03;if(marker.visible){Object.assign(markerState,{inflate:current.inflate,stretch:current.stretch,twist:current.twist,grip:uniforms.uGrip.value,axis:uniforms.uAxis.value.toArray(),grab:grabPoint.toArray(),delta:smoothDelta.toArray(),pulse:pulseAge});const point=deformPoint(grabPoint.toArray(),grabPoint.toArray(),markerState);marker.position.set(...point);markerMaterial.opacity=Math.min(.7,current.grip*.6);marker.rotation.y=-root.rotation.y;}
+  marker.visible=current.grip>.03 || (gazeAim && sensors.kind==='eye');if(marker.visible){Object.assign(markerState,{inflate:current.inflate,stretch:current.stretch,twist:current.twist,grip:uniforms.uGrip.value,axis:uniforms.uAxis.value.toArray(),grab:grabPoint.toArray(),delta:smoothDelta.toArray(),pulse:pulseAge});const point=deformPoint(grabPoint.toArray(),grabPoint.toArray(),markerState);marker.position.set(...point);markerMaterial.color.set(nightView?'#f3f1df':'#333333');markerMaterial.opacity=gazeAim ? .85 : Math.min(.7,current.grip*.6);marker.rotation.y=-root.rotation.y;}
 
  }
  if(now-lastUI>100){updateControls();lastUI=now}renderer.render(scene,camera)
